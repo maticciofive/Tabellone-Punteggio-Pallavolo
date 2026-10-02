@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏐 Tabellone Pallavolo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            height: 100dvh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* SETUP SCREEN */
+        #setup-screen {
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        input[type="text"], input[type="number"], select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #334155;
+            color: white;
+            font-size: 1rem;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        button.primary-btn {
+            background: linear-gradient(to right, #2563eb, #9333ea);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+
+        button.primary-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* GAME SCREEN */
+        #game-screen {
+            display: none;
+            height: 100dvh;
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid #334155;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .set-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .set-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #334155;
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .set-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .set-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+
+        .set-number {
+            font-size: 2rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .set-label {
+            font-size: 10px;
+            opacity: 0.6;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .first-to-target {
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(234, 179, 8, 0.2);
+            border: 1px solid rgba(234, 179, 8, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .first-to-target span {
+            color: #fde047;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 4px;
+        }
+
+        .action-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #334155;
+            color: rgba(255,255,255,0.8);
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .action-btn.danger {
+            background: rgba(127, 29, 29, 0.5);
+            color: #fca5a5;
+        }
+
+        .court-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        @media (orientation: portrait) {
+            .court-container {
+                flex-direction: column;
+            }
+        }
+
+        .team-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            transition: filter 0.15s;
+        }
+
+        .team-zone:active {
+            filter: brightness(1.2);
+        }
+
+        .team-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 8px;
+        }
+
+        @media (min-width: 768px) {
+            .team-header {
+                gap: 12px;
+            }
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-align: center;
+            text-shadow: 0 3px 6px rgba(0,0,0,0.6);
+        }
+
+        @media (orientation: landscape) {
+            .team-name {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (min-width: 768px) and (orientation: landscape) {
+            .team-name {
+                font-size: 1.875rem;
+            }
+        }
+
+        @media (min-width: 1024px) and (orientation: landscape) {
+            .team-name {
+                font-size: 2.25rem;
+            }
+        }
+
+        .sets-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 4px 8px;
+        }
+
+        @media (min-width: 768px) {
+            .sets-badge {
+                padding: 6px 12px;
+            }
+        }
+
+        .set-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        @media (min-width: 768px) {
+            .set-dot {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        .sets-count {
+            font-size: 1.125rem;
+            font-weight: 900;
+            color: white;
+            margin-left: 4px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        @media (min-width: 768px) {
+            .sets-count {
+                font-size: 1.5rem;
+            }
+        }
+
+        .score-display {
+            font-size: clamp(5rem, 22vw, 12rem);
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        @media (orientation: landscape) {
+            .score-display {
+                font-size: clamp(5rem, 18vh, 14rem);
+            }
+        }
+
+        .first-to-badge {
+            margin-top: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(250, 204, 21, 0.3);
+            border: 2px solid #facc15;
+            animation: pulse 2s infinite;
+        }
+
+        .first-to-badge span {
+            color: #fef08a;
+            font-weight: bold;
+            font-size: 12px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        @media (min-width: 768px) {
+            .first-to-badge span {
+                font-size: 14px;
+            }
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 8px;
+            color: rgba(255,255,255,0.4);
+            font-size: 10px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        @media (min-width: 768px) {
+            .hint {
+                font-size: 12px;
+            }
+        }
+
+        /* MODALS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #475569;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            animation: bounce-in 0.5s;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .modal-text {
+            font-size: 1.125rem;
+            margin-bottom: 16px;
+            color: #cbd5e1;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            font-size: 1.125rem;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+
+        .modal-btn:active {
+            transform: scale(0.98);
+        }
+
+        .modal-btn.success {
+            background: linear-gradient(to right, #16a34a, #059669);
+            color: white;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(to right, #2563eb, #9333ea);
+            color: white;
+        }
+
+        .history-list {
+            max-height: 240px;
+            overflow-y: auto;
+            margin: 16px 0;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .history-item.team1-won {
+            background: rgba(30, 58, 138, 0.3);
+            border: 1px solid rgba(29, 78, 216, 0.5);
+        }
+
+        .history-item.team2-won {
+            background: rgba(127, 29, 29, 0.3);
+            border: 1px solid rgba(185, 28, 28, 0.5);
+        }
+
+        .victory-screen {
+            display: none;
+            height: 100dvh;
+            width: 100%;
+            background: #0f172a;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .victory-content {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .trophy {
+            font-size: 6rem;
+            margin-bottom: 16px;
+            animation: bounce 1s infinite;
+        }
+
+        @media (min-width: 768px) {
+            .trophy {
+                font-size: 8rem;
+            }
+        }
+
+        .winner-name {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        @media (min-width: 768px) {
+            .winner-name {
+                font-size: 3rem;
+            }
+        }
+
+        .winner-label {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        @media (min-width: 768px) {
+            .winner-label {
+                font-size: 1.875rem;
+            }
+        }
+
+        .winner-score {
+            font-size: 1.125rem;
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+
+        @media (min-width: 768px) {
+            .winner-score {
+                font-size: 1.25rem;
+            }
+        }
+
+        .summary-box {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #334155;
+        }
+
+        .summary-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(-10%); }
+            50% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen">
+        <h1 style="text-align:center; font-size:1.875rem; font-weight:bold; margin-bottom:8px;">🏐 Tabellone Pallavolo</h1>
+        <p style="text-align:center; color:#94a3b8; font-size:14px; margin-bottom:24px;">Configura la partita</p>
+
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label>Squadra 1</label>
+                <input type="text" id="team1-name" value="Squadra 1">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Colore S1</label>
+                <input type="color" id="team1-color" value="#3b82f6">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label>Squadra 2</label>
+                <input type="text" id="team2-name" value="Squadra 2">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Colore S2</label>
+                <input type="color" id="team2-color" value="#ef4444">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Set per vincere la partita</label>
+            <select id="sets-to-win">
+                <option value="2">Al meglio dei 3 (2 set)</option>
+                <option value="3" selected>Al meglio dei 5 (3 set)</option>
+                <option value="4">Al meglio dei 7 (4 set)</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label>Punti Set Normale</label>
+                <input type="number" id="points-normal" value="25" min="1">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Punti Tie-Break</label>
+                <input type="number" id="points-tiebreak" value="15" min="1">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" id="require-diff" checked>
+                Richiedi vittoria con 2 punti di scarto
+            </label>
+        </div>
+
+        <div class="form-group" id="cap-wrapper">
+            <label>Limite massimo punti (0 = infinito)</label>
+            <input type="number" id="point-cap" value="27" min="0">
+            <p style="font-size:12px; color:#64748b; margin-top:4px;">Il set finisce al raggiungimento di 27 punti</p>
+        </div>
+
+        <button class="primary-btn" onclick="startGame()">🏐 Inizia Partita</button>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen">
+        <div class="top-bar">
+            <div class="set-selector">
+                <button class="set-btn" id="prev-set-btn" onclick="changeSet(-1)">−</button>
+                <div class="set-display">
+                    <span class="set-number" id="current-set-num">1</span>
+                    <span class="set-label">Set <span id="tiebreak-label" style="color:#facc15; display:none;">TB</span></span>
+                </div>
+                <button class="set-btn" id="next-set-btn" onclick="changeSet(1)">+</button>
+                <span style="color:rgba(255,255,255,0.5); font-size:12px; margin-left:4px;" id="sets-score">0-0</span>
+            </div>
+
+            <div class="first-to-target" id="first-to-badge" style="display:none;">
+                <span id="first-to-text">⭐ Primo a 25: Squadra 1</span>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="showHistory()">📋</button>
+                <button class="action-btn" onclick="swapSides()">🔄</button>
+                <button class="action-btn" onclick="undoLastSet()">↩️</button>
+                <button class="action-btn danger" onclick="backToSetup()">✕</button>
+            </div>
+        </div>
+
+        <div class="court-container" id="court">
+            <div class="team-zone" id="zone-team1" onclick="addPoint(1)" oncontextmenu="return false;">
+                <div class="team-header">
+                    <div class="team-name" id="display-name-1">Squadra 1</div>
+                    <div class="sets-badge">
+                        <div id="sets-dots-1"></div>
+                        <span class="sets-count" id="sets-count-1">0</span>
+                    </div>
+                </div>
+                <div class="score-display" id="score-1">0</div>
+                <div class="first-to-badge" id="first-to-1" style="display:none;">
+                    <span>⭐ Primo a 25!</span>
+                </div>
+                <div class="hint">Tap = +1 | Pressione lunga = -1</div>
+            </div>
+
+            <div class="team-zone" id="zone-team2" onclick="addPoint(2)" oncontextmenu="return false;">
+                <div class="team-header">
+                    <div class="team-name" id="display-name-2">Squadra 2</div>
+                    <div class="sets-badge">
+                        <div id="sets-dots-2"></div>
+                        <span class="sets-count" id="sets-count-2">0</span>
+                    </div>
+                </div>
+                <div class="score-display" id="score-2">0</div>
+                <div class="first-to-badge" id="first-to-2" style="display:none;">
+                    <span>⭐ Primo a 25!</span>
+                </div>
+                <div class="hint">Tap = +1 | Pressione lunga = -1</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SET WON MODAL -->
+    <div class="modal-overlay" id="modal-set">
+        <div class="modal-content">
+            <div style="font-size:3rem; margin-bottom:12px;">🎉</div>
+            <h2 class="modal-title" id="modal-set-title">Set 1 vinto!</h2>
+            <div id="modal-set-winner" style="font-size:1.875rem; font-weight:900; margin-bottom:8px;">Squadra 1</div>
+            <p class="modal-text" id="modal-set-score">25 - 20</p>
+            <button class="modal-btn success" onclick="nextSet()">Prossimo Set →</button>
+        </div>
+    </div>
+
+    <!-- HISTORY MODAL -->
+    <div class="modal-overlay" id="modal-history">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2 class="modal-title" style="margin:0;">📋 Storico Set</h2>
+                <button class="action-btn" onclick="closeHistory()" style="width:32px; height:32px; border-radius:50%;">✕</button>
+            </div>
+            <div class="history-list" id="history-list"></div>
+            <p style="color:#94a3b8; font-size:12px; text-align:center; padding-top:12px; border-top:1px solid #334155;">
+                Set in corso: <strong id="history-current-set">1</strong>
+            </p>
+        </div>
+    </div>
+
+    <!-- VICTORY SCREEN -->
+    <div class="victory-screen" id="victory-screen">
+        <div class="victory-content">
+            <div class="trophy">🏆</div>
+            <h1 class="winner-name" id="victory-winner-name">Squadra 1</h1>
+            <p class="winner-label">VINCITORE!</p>
+            <p class="winner-score" id="victory-score">3 - 1 nei set</p>
+
+            <div class="summary-box">
+                <h3 class="summary-title">Riepilogo Set</h3>
+                <div id="victory-history"></div>
+            </div>
+
+            <button class="modal-btn primary" onclick="newMatch()">🏐 Nuova Partita</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const state = {
+            config: {},
+            scores: [0, 0],
+            setsWon: [0, 0],
+            currentSet: 1,
+            teamsSwapped: false,
+            setHistory: [],
+            firstToTarget: null,
+            pressTimer: null,
+            isLongPress: false
+        };
+
+        // Setup toggle for cap
+        document.getElementById('require-diff').addEventListener('change', function() {
+            document.getElementById('cap-wrapper').style.display = this.checked ? 'block' : 'none';
+        });
+
+        function startGame() {
+            state.config = {
+                team1Name: document.getElementById('team1-name').value || 'Squadra 1',
+                team2Name: document.getElementById('team2-name').value || 'Squadra 2',
+                team1Color: document.getElementById('team1-color').value,
+                team2Color: document.getElementById('team2-color').value,
+                setsToWin: parseInt(document.getElementById('sets-to-win').value),
+                pointsNormal: parseInt(document.getElementById('points-normal').value),
+                pointsTieBreak: parseInt(document.getElementById('points-tiebreak').value),
+                requireDiff: document.getElementById('require-diff').checked,
+                pointCap: parseInt(document.getElementById('point-cap').value)
+            };
+
+            // Apply colors
+            document.getElementById('zone-team1').style.backgroundColor = state.config.team1Color;
+            document.getElementById('zone-team2').style.backgroundColor = state.config.team2Color;
+            document.getElementById('display-name-1').textContent = state.config.team1Name;
+            document.getElementById('display-name-2').textContent = state.config.team2Name;
+
+            // Reset state
+            state.scores = [0, 0];
+            state.setsWon = [0, 0];
+            state.currentSet = 1;
+            state.teamsSwapped = false;
+            state.setHistory = [];
+            state.firstToTarget = null;
+
+            // Show game screen
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+
+            updateUI();
+            setupLongPress();
+        }
+
+        function setupLongPress() {
+            const zones = [document.getElementById('zone-team1'), document.getElementById('zone-team2')];
+            zones.forEach((zone, idx) => {
+                zone.addEventListener('mousedown', (e) => startPress(e, idx + 1));
+                zone.addEventListener('touchstart', (e) => startPress(e, idx + 1));
+                zone.addEventListener('mouseup', endPress);
+                zone.addEventListener('mouseleave', endPress);
+                zone.addEventListener('touchend', endPress);
+            });
+        }
+
+        function startPress(e, teamIdx) {
+            state.isLongPress = false;
+            state.pressTimer = setTimeout(() => {
+                state.isLongPress = true;
+                subtractPoint(teamIdx);
+                const zone = teamIdx === 1 ? document.getElementById('zone-team1') : document.getElementById('zone-team2');
+                zone.style.filter = 'brightness(0.75)';
+                setTimeout(() => zone.style.filter = '', 200);
+            }, 500);
+        }
+
+        function endPress() {
+            if (state.pressTimer) {
+                clearTimeout(state.pressTimer);
+                state.pressTimer = null;
+            }
+        }
+
+        function addPoint(teamIdx) {
+            if (state.isLongPress) {
+                state.isLongPress = false;
+                return;
+            }
+
+            const idx = teamIdx - 1;
+            state.scores[idx]++;
+
+            // Check first to target
+            const target = getTargetPoints();
+            if (!state.firstToTarget) {
+                if (state.scores[0] >= target && state.scores[0] > state.scores[1]) {
+                    state.firstToTarget = 1;
+                } else if (state.scores[1] >= target && state.scores[1] > state.scores[0]) {
+                    state.firstToTarget = 2;
+                }
+            }
+
+            checkSetEnd();
+            updateUI();
+        }
+
+        function subtractPoint(teamIdx) {
+            const idx = teamIdx - 1;
+            if (state.scores[idx] > 0) {
+                state.scores[idx]--;
+                updateUI();
+            }
+        }
+
+        function getTargetPoints() {
+            const maxSet = state.config.setsToWin * 2 - 1;
+            return state.currentSet === maxSet ? state.config.pointsTieBreak : state.config.pointsNormal;
+        }
+
+        function checkSetEnd() {
+            const s1 = state.scores[0];
+            const s2 = state.scores[1];
+            const target = getTargetPoints();
+            let winner = -1;
+
+            if (s1 >= target || s2 >= target) {
+                if (state.config.requireDiff) {
+                    const diff = Math.abs(s1 - s2);
+                    if (diff >= 2) {
+                        winner = s1 > s2 ? 0 : 1;
+                    } else if (state.config.pointCap > 0) {
+                        if (s1 >= state.config.pointCap && s1 > s2) winner = 0;
+                        if (s2 >= state.config.pointCap && s2 > s1) winner = 1;
+                    }
+                } else {
+                    winner = s1 > s2 ? 0 : 1;
+                }
+            }
+
+            if (winner !== -1) {
+                endSet(winner);
+            }
+        }
+
+        function endSet(winnerIdx) {
+            state.setsWon[winnerIdx]++;
+            state.setHistory.push({
+                team1: state.scores[0],
+                team2: state.scores[1],
+                winner: winnerIdx + 1
+            });
+
+            // Show modal
+            const winnerName = winnerIdx === 0 ? state.config.team1Name : state.config.team2Name;
+            const winnerColor = winnerIdx === 0 ? state.config.team1Color : state.config.team2Color;
+            
+            document.getElementById('modal-set-title').textContent = `Set ${state.currentSet} vinto!`;
+            document.getElementById('modal-set-winner').textContent = winnerName;
+            document.getElementById('modal-set-winner').style.color = winnerColor;
+            document.getElementById('modal-set-score').textContent = `${state.scores[0]} - ${state.scores[1]}`;
+            document.getElementById('modal-set').style.display = 'flex';
+        }
+
+        function nextSet() {
+            document.getElementById('modal-set').style.display = 'none';
+
+            // Check if match is over
+            if (state.setsWon[0] >= state.config.setsToWin || state.setsWon[1] >= state.config.setsToWin) {
+                showVictory();
+                return;
+            }
+
+            // Reset for next set
+            state.scores = [0, 0];
+            state.currentSet++;
+            state.firstToTarget = null;
+            updateUI();
+        }
+
+        function changeSet(delta) {
+            const maxSet = state.config.setsToWin * 2 - 1;
+            const newSet = Math.max(1, Math.min(maxSet, state.currentSet + delta));
+            state.currentSet = newSet;
+            state.firstToTarget = null;
+            updateUI();
+        }
+
+        function swapSides() {
+            state.teamsSwapped = !state.teamsSwapped;
+            const court = document.getElementById('court');
+            if (state.teamsSwapped) {
+                court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row-reverse' : 'column-reverse';
+            } else {
+                court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row' : 'column';
+            }
+        }
+
+        function undoLastSet() {
+            if (state.setHistory.length === 0) return;
+
+            const lastSet = state.setHistory.pop();
+            const winnerIdx = lastSet.winner - 1;
+            state.setsWon[winnerIdx]--;
+            state.currentSet--;
+            state.scores = [0, 0];
+            state.firstToTarget = null;
+            updateUI();
+        }
+
+        function showHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+
+            if (state.setHistory.length === 0) {
+                list.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:16px;">Nessun set completato</p>';
+            } else {
+                state.setHistory.forEach((set, i) => {
+                    const item = document.createElement('div');
+                    item.className = `history-item ${set.winner === 1 ? 'team1-won' : 'team2-won'}`;
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="color:rgba(255,255,255,0.6); font-size:12px; font-weight:600;">Set ${i + 1}</span>
+                            <span style="color:#facc15; font-size:12px;">🏆</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; font-size:14px;">
+                            <span style="font-weight:bold; color:${set.winner === 1 ? '#60a5fa' : 'rgba(255,255,255,0.5)'};">${state.config.team1Name}: ${set.team1}</span>
+                            <span style="color:#475569;">-</span>
+                            <span style="font-weight:bold; color:${set.winner === 2 ? '#f87171' : 'rgba(255,255,255,0.5)'};">${state.config.team2Name}: ${set.team2}</span>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+
+            document.getElementById('history-current-set').textContent = state.currentSet;
+            document.getElementById('modal-history').style.display = 'flex';
+        }
+
+        function closeHistory() {
+            document.getElementById('modal-history').style.display = 'none';
+        }
+
+        function showVictory() {
+            const winnerIdx = state.setsWon[0] > state.setsWon[1] ? 0 : 1;
+            const winnerName = winnerIdx === 0 ? state.config.team1Name : state.config.team2Name;
+            const winnerColor = winnerIdx === 0 ? state.config.team1Color : state.config.team2Color;
+
+            document.getElementById('victory-winner-name').textContent = winnerName;
+            document.getElementById('victory-winner-name').style.color = winnerColor;
+            document.getElementById('victory-score').textContent = `${state.setsWon[0]} - ${state.setsWon[1]} nei set`;
+
+            const historyDiv = document.getElementById('victory-history');
+            historyDiv.innerHTML = '';
+            state.setHistory.forEach((set, i) => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:rgba(51,65,85,0.5); border-radius:8px; padding:8px 12px; margin-bottom:8px;';
+                item.innerHTML = `
+                    <span style="color:#94a3b8; font-size:14px; font-weight:500;">Set ${i + 1}</span>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-weight:bold; color:${set.winner === 1 ? 'white' : 'rgba(255,255,255,0.5)'};">${state.config.team1Name}: ${set.team1}</span>
+                        <span style="color:#475569;">|</span>
+                        <span style="font-weight:bold; color:${set.winner === 2 ? 'white' : 'rgba(255,255,255,0.5)'};">${state.config.team2Name}: ${set.team2}</span>
+                    </div>
+                `;
+                historyDiv.appendChild(item);
+            });
+
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('victory-screen').style.display = 'flex';
+        }
+
+        function backToSetup() {
+            if (confirm('Sei sicuro di voler abbandonare la partita in corso?')) {
+                document.getElementById('game-screen').style.display = 'none';
+                document.getElementById('setup-screen').style.display = 'flex';
+            }
+        }
+
+        function newMatch() {
+            document.getElementById('victory-screen').style.display = 'none';
+            document.getElementById('setup-screen').style.display = 'flex';
+        }
+
+        function updateUI() {
+            // Update scores
+            document.getElementById('score-1').textContent = state.scores[0];
+            document.getElementById('score-2').textContent = state.scores[1];
+
+            // Update sets
+            document.getElementById('sets-count-1').textContent = state.setsWon[0];
+            document.getElementById('sets-count-2').textContent = state.setsWon[1];
+
+            // Update set dots
+            updateSetDots('sets-dots-1', state.setsWon[0]);
+            updateSetDots('sets-dots-2', state.setsWon[1]);
+
+            // Update current set
+            document.getElementById('current-set-num').textContent = state.currentSet;
+            const maxSet = state.config.setsToWin * 2 - 1;
+            const isTiebreak = state.currentSet === maxSet;
+            document.getElementById('tiebreak-label').style.display = isTiebreak ? 'inline' : 'none';
+
+            // Update set buttons
+            document.getElementById('prev-set-btn').disabled = state.currentSet <= 1;
+            document.getElementById('next-set-btn').disabled = state.currentSet >= maxSet;
+
+            // Update sets score
+            document.getElementById('sets-score').textContent = `${state.setsWon[0]}-${state.setsWon[1]}`;
+
+            // Update first to target
+            const target = getTargetPoints();
+            if (state.firstToTarget) {
+                document.getElementById('first-to-badge').style.display = 'block';
+                const teamName = state.firstToTarget === 1 ? state.config.team1Name : state.config.team2Name;
+                document.getElementById('first-to-text').textContent = `⭐ Primo a ${target}: ${teamName}`;
+
+                const zone1 = document.getElementById('first-to-1');
+                const zone2 = document.getElementById('first-to-2');
+                zone1.style.display = state.firstToTarget === 1 ? 'block' : 'none';
+                zone2.style.display = state.firstToTarget === 2 ? 'block' : 'none';
+                zone1.querySelector('span').textContent = `⭐ Primo a ${target}!`;
+                zone2.querySelector('span').textContent = `⭐ Primo a ${target}!`;
+            } else {
+                document.getElementById('first-to-badge').style.display = 'none';
+                document.getElementById('first-to-1').style.display = 'none';
+                document.getElementById('first-to-2').style.display = 'none';
+            }
+        }
+
+        function updateSetDots(elementId, count) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'set-dot';
+                container.appendChild(dot);
+            }
+        }
+
+        // Prevent context menu
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Handle orientation change
+        window.addEventListener('resize', () => {
+            if (document.getElementById('game-screen').style.display === 'flex') {
+                const court = document.getElementById('court');
+                if (state.teamsSwapped) {
+                    court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row-reverse' : 'column-reverse';
+                } else {
+                    court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row' : 'column';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
