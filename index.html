@@ -853,7 +853,6 @@
                     preview.src = e.target.result;
                     preview.style.display = 'block';
                     
-                    // Store in state
                     if (teamNum === 1) {
                         state.team1Logo = e.target.result;
                     } else {
@@ -877,13 +876,11 @@
                 pointCap: parseInt(document.getElementById('point-cap').value)
             };
 
-            // Apply colors
             document.getElementById('zone-team1').style.backgroundColor = state.config.team1Color;
             document.getElementById('zone-team2').style.backgroundColor = state.config.team2Color;
             document.getElementById('display-name-1').textContent = state.config.team1Name;
             document.getElementById('display-name-2').textContent = state.config.team2Name;
 
-            // Reset state
             state.scores = [0, 0];
             state.setsWon = [0, 0];
             state.currentSet = 1;
@@ -891,10 +888,8 @@
             state.setHistory = [];
             state.firstToTarget = null;
 
-            // Load logos
             loadLogos();
 
-            // Show game screen
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
 
@@ -903,7 +898,6 @@
         }
 
         function loadLogos() {
-            // Team 1 logo
             const logo1Container = document.getElementById('logo-container-1');
             if (state.team1Logo) {
                 logo1Container.innerHTML = `<img src="${state.team1Logo}" class="team-logo-large" alt="Logo ${state.config.team1Name}">`;
@@ -911,7 +905,6 @@
                 logo1Container.innerHTML = '<div class="team-logo-placeholder-large">🏐</div>';
             }
 
-            // Team 2 logo
             const logo2Container = document.getElementById('logo-container-2');
             if (state.team2Logo) {
                 logo2Container.innerHTML = `<img src="${state.team2Logo}" class="team-logo-large" alt="Logo ${state.config.team2Name}">`;
@@ -920,55 +913,79 @@
             }
         }
 
+        let isProcessing = false;
+        let hasTouch = false;
+
         function setupLongPress() {
             const zones = [document.getElementById('zone-team1'), document.getElementById('zone-team2')];
+            
             zones.forEach((zone, idx) => {
                 const teamIdx = idx + 1;
                 
-                // Remove onclick to prevent double events
-                zone.removeAttribute('onclick');
+                const newZone = zone.cloneNode(true);
+                zone.parentNode.replaceChild(newZone, zone);
                 
-                // Touch events
-                zone.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    startPress(teamIdx);
-                }, { passive: false });
+                newZone.id = `zone-team${teamIdx}`;
                 
-                zone.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    endPress(teamIdx);
-                }, { passive: false });
+                hasTouch = 'ontouchstart' in window;
                 
-                zone.addEventListener('touchcancel', () => {
-                    cancelPress();
-                });
-                
-                // Mouse events (for desktop)
-                zone.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    startPress(teamIdx);
-                });
-                
-                zone.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    endPress(teamIdx);
-                });
-                
-                zone.addEventListener('mouseleave', () => {
-                    cancelPress();
-                });
+                if (hasTouch) {
+                    newZone.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        if (isProcessing) return;
+                        isProcessing = true;
+                        startPress(teamIdx);
+                    }, { passive: false });
+                    
+                    newZone.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        endPress(teamIdx);
+                        setTimeout(() => { isProcessing = false; }, 100);
+                    }, { passive: false });
+                    
+                    newZone.addEventListener('touchcancel', () => {
+                        cancelPress();
+                        isProcessing = false;
+                    });
+                } else {
+                    newZone.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        if (isProcessing) return;
+                        isProcessing = true;
+                        startPress(teamIdx);
+                    });
+                    
+                    newZone.addEventListener('mouseup', (e) => {
+                        e.preventDefault();
+                        endPress(teamIdx);
+                        setTimeout(() => { isProcessing = false; }, 100);
+                    });
+                    
+                    newZone.addEventListener('mouseleave', () => {
+                        cancelPress();
+                        isProcessing = false;
+                    });
+                }
             });
         }
 
         function startPress(teamIdx) {
             state.isLongPress = false;
             state.currentPressTeam = teamIdx;
+            
             state.pressTimer = setTimeout(() => {
                 state.isLongPress = true;
                 subtractPoint(teamIdx);
-                const zone = teamIdx === 1 ? document.getElementById('zone-team1') : document.getElementById('zone-team2');
-                zone.style.filter = 'brightness(0.75)';
-                setTimeout(() => zone.style.filter = '', 200);
+                
+                const zone = document.getElementById(`zone-team${teamIdx}`);
+                if (zone) {
+                    zone.style.filter = 'brightness(0.75)';
+                    setTimeout(() => {
+                        if (zone) zone.style.filter = '';
+                    }, 200);
+                }
+                
+                isProcessing = false;
             }, 500);
         }
 
@@ -978,10 +995,11 @@
                 state.pressTimer = null;
             }
             
-            // If it wasn't a long press, add point
-            if (!state.isLongPress) {
+            if (!state.isLongPress && state.currentPressTeam === teamIdx) {
                 addPoint(teamIdx);
             }
+            
+            state.currentPressTeam = null;
         }
 
         function cancelPress() {
@@ -996,7 +1014,6 @@
             const idx = teamIdx - 1;
             state.scores[idx]++;
 
-            // Check first to target
             const target = getTargetPoints();
             if (!state.firstToTarget) {
                 if (state.scores[0] >= target && state.scores[0] > state.scores[1]) {
@@ -1056,7 +1073,6 @@
                 winner: winnerIdx + 1
             });
 
-            // Show modal
             const winnerName = winnerIdx === 0 ? state.config.team1Name : state.config.team2Name;
             const winnerColor = winnerIdx === 0 ? state.config.team1Color : state.config.team2Color;
             
@@ -1070,13 +1086,11 @@
         function nextSet() {
             document.getElementById('modal-set').style.display = 'none';
 
-            // Check if match is over
             if (state.setsWon[0] >= state.config.setsToWin || state.setsWon[1] >= state.config.setsToWin) {
                 showVictory();
                 return;
             }
 
-            // Reset for next set
             state.scores = [0, 0];
             state.currentSet++;
             state.firstToTarget = null;
@@ -1180,7 +1194,6 @@
                 document.getElementById('game-screen').style.display = 'none';
                 document.getElementById('setup-screen').style.display = 'flex';
                 
-                // Reset logos
                 state.team1Logo = null;
                 state.team2Logo = null;
                 document.getElementById('team1-logo').value = '';
@@ -1194,7 +1207,6 @@
             document.getElementById('victory-screen').style.display = 'none';
             document.getElementById('setup-screen').style.display = 'flex';
             
-            // Reset logos
             state.team1Logo = null;
             state.team2Logo = null;
             document.getElementById('team1-logo').value = '';
@@ -1204,32 +1216,25 @@
         }
 
         function updateUI() {
-            // Update scores
             document.getElementById('score-1').textContent = state.scores[0];
             document.getElementById('score-2').textContent = state.scores[1];
 
-            // Update sets
             document.getElementById('sets-count-1').textContent = state.setsWon[0];
             document.getElementById('sets-count-2').textContent = state.setsWon[1];
 
-            // Update set dots
             updateSetDots('sets-dots-1', state.setsWon[0]);
             updateSetDots('sets-dots-2', state.setsWon[1]);
 
-            // Update current set
             document.getElementById('current-set-num').textContent = state.currentSet;
             const maxSet = state.config.setsToWin * 2 - 1;
             const isTiebreak = state.currentSet === maxSet;
             document.getElementById('tiebreak-label').style.display = isTiebreak ? 'inline' : 'none';
 
-            // Update set buttons
             document.getElementById('prev-set-btn').disabled = state.currentSet <= 1;
             document.getElementById('next-set-btn').disabled = state.currentSet >= maxSet;
 
-            // Update sets score
             document.getElementById('sets-score').textContent = `${state.setsWon[0]}-${state.setsWon[1]}`;
 
-            // Update first to target
             const target = getTargetPoints();
             if (state.firstToTarget) {
                 document.getElementById('first-to-badge').style.display = 'block';
@@ -1259,10 +1264,8 @@
             }
         }
 
-        // Prevent context menu
         document.addEventListener('contextmenu', e => e.preventDefault());
 
-        // Handle orientation change
         window.addEventListener('resize', () => {
             if (document.getElementById('game-screen').style.display === 'flex') {
                 const court = document.getElementById('court');
@@ -1271,13 +1274,6 @@
                 } else {
                     court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row' : 'column';
                 }
-            }
-        });
-
-        // Initialize long press on page load
-        window.addEventListener('load', () => {
-            if (document.getElementById('game-screen').style.display === 'flex') {
-                setupLongPress();
             }
         });
     </script>
