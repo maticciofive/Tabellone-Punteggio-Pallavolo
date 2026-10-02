@@ -919,55 +919,85 @@
             }
         }
 
+        // Flag to prevent double events
+        let isProcessing = false;
+        let hasTouch = false;
+
         function setupLongPress() {
             const zones = [document.getElementById('zone-team1'), document.getElementById('zone-team2')];
+            
             zones.forEach((zone, idx) => {
                 const teamIdx = idx + 1;
                 
-                // Remove onclick to prevent double events
-                zone.removeAttribute('onclick');
+                // Remove all existing event listeners by cloning the node
+                const newZone = zone.cloneNode(true);
+                zone.parentNode.replaceChild(newZone, zone);
                 
-                // Touch events
-                zone.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    startPress(teamIdx);
-                }, { passive: false });
+                // Re-assign IDs
+                newZone.id = `zone-team${teamIdx}`;
                 
-                zone.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    endPress(teamIdx);
-                }, { passive: false });
+                // Detect touch device
+                hasTouch = 'ontouchstart' in window;
                 
-                zone.addEventListener('touchcancel', () => {
-                    cancelPress();
-                });
-                
-                // Mouse events (for desktop)
-                zone.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    startPress(teamIdx);
-                });
-                
-                zone.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    endPress(teamIdx);
-                });
-                
-                zone.addEventListener('mouseleave', () => {
-                    cancelPress();
-                });
+                if (hasTouch) {
+                    // Touch events only
+                    newZone.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        if (isProcessing) return;
+                        isProcessing = true;
+                        startPress(teamIdx);
+                    }, { passive: false });
+                    
+                    newZone.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        endPress(teamIdx);
+                        setTimeout(() => { isProcessing = false; }, 100);
+                    }, { passive: false });
+                    
+                    newZone.addEventListener('touchcancel', () => {
+                        cancelPress();
+                        isProcessing = false;
+                    });
+                } else {
+                    // Mouse events only (desktop)
+                    newZone.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        if (isProcessing) return;
+                        isProcessing = true;
+                        startPress(teamIdx);
+                    });
+                    
+                    newZone.addEventListener('mouseup', (e) => {
+                        e.preventDefault();
+                        endPress(teamIdx);
+                        setTimeout(() => { isProcessing = false; }, 100);
+                    });
+                    
+                    newZone.addEventListener('mouseleave', () => {
+                        cancelPress();
+                        isProcessing = false;
+                    });
+                }
             });
         }
 
         function startPress(teamIdx) {
             state.isLongPress = false;
             state.currentPressTeam = teamIdx;
+            
             state.pressTimer = setTimeout(() => {
                 state.isLongPress = true;
                 subtractPoint(teamIdx);
-                const zone = teamIdx === 1 ? document.getElementById('zone-team1') : document.getElementById('zone-team2');
-                zone.style.filter = 'brightness(0.75)';
-                setTimeout(() => zone.style.filter = '', 200);
+                
+                const zone = document.getElementById(`zone-team${teamIdx}`);
+                if (zone) {
+                    zone.style.filter = 'brightness(0.75)';
+                    setTimeout(() => {
+                        if (zone) zone.style.filter = '';
+                    }, 200);
+                }
+                
+                isProcessing = false;
             }, 500);
         }
 
@@ -977,10 +1007,12 @@
                 state.pressTimer = null;
             }
             
-            // If it wasn't a long press, add point
-            if (!state.isLongPress) {
+            // If it wasn't a long press and we have the right team, add point
+            if (!state.isLongPress && state.currentPressTeam === teamIdx) {
                 addPoint(teamIdx);
             }
+            
+            state.currentPressTeam = null;
         }
 
         function cancelPress() {
