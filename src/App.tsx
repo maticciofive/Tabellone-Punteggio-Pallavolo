@@ -295,43 +295,44 @@ function TeamArea({
         <div className="absolute inset-0 bg-black opacity-30 pointer-events-none" />
       )}
 
-      {/* Team Name */}
-      <div
-        className={`font-bold uppercase tracking-wider text-white/90 text-center px-2 ${
-          isLandscape ? 'text-sm md:text-lg' : 'text-base md:text-xl'
-        }`}
-        style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
-      >
-        {name}
+      {/* Team Name with Sets Won */}
+      <div className="flex items-center justify-center gap-2 md:gap-3 px-2 w-full">
+        <div
+          className={`font-black uppercase tracking-wide text-white text-center ${
+            isLandscape ? 'text-xl md:text-3xl lg:text-4xl' : 'text-2xl md:text-4xl'
+          }`}
+          style={{ textShadow: '0 3px 6px rgba(0,0,0,0.6)' }}
+        >
+          {name}
+        </div>
+        {/* Sets Won Badge */}
+        <div className="flex items-center gap-1 bg-black/30 rounded-full px-2 py-1 md:px-3 md:py-1.5">
+          <div className="flex gap-0.5 md:gap-1">
+            {Array.from({ length: setsWon }).map((_, i) => (
+              <div
+                key={i}
+                className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-md"
+              />
+            ))}
+          </div>
+          <span
+            className="text-white font-black text-lg md:text-2xl ml-1"
+            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
+          >
+            {setsWon}
+          </span>
+        </div>
       </div>
 
       {/* Score */}
       <div
         className="font-black text-white leading-none"
         style={{
-          fontSize: isLandscape ? 'clamp(4rem, 15vh, 12rem)' : 'clamp(4rem, 20vw, 10rem)',
+          fontSize: isLandscape ? 'clamp(5rem, 18vh, 14rem)' : 'clamp(5rem, 22vw, 12rem)',
           textShadow: '0 4px 8px rgba(0,0,0,0.4)',
         }}
       >
         {score}
-      </div>
-
-      {/* Sets Won */}
-      <div className="flex items-center gap-2 mt-1">
-        <div className="flex gap-1">
-          {Array.from({ length: setsWon }).map((_, i) => (
-            <div
-              key={i}
-              className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-white/90 shadow-md"
-            />
-          ))}
-        </div>
-        <span
-          className="text-white/80 font-semibold text-xs md:text-sm"
-          style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-        >
-          Set: {setsWon}
-        </span>
       </div>
 
       {/* First to target indicator */}
@@ -490,33 +491,37 @@ function GameScreen({
   return (
     <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-slate-900">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-2 py-1 bg-slate-900/90 border-b border-slate-700 z-10 flex-wrap gap-1">
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-slate-700 z-10 flex-wrap gap-2">
         {/* Set selector + info */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           {/* Set selector buttons */}
           <button
             onClick={() => onSetCurrentSet(currentSet - 1)}
             disabled={currentSet <= 1}
-            className="w-6 h-6 rounded bg-slate-700 text-white/80 text-xs hover:bg-slate-600 active:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+            className="w-8 h-8 rounded-lg bg-slate-700 text-white text-sm font-bold hover:bg-slate-600 active:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             title="Set precedente"
           >
             −
           </button>
-          <span className="text-white/70 text-xs font-semibold min-w-[60px] text-center">
-            Set {currentSet}/{maxSet}
-            {isTiebreak && <span className="text-yellow-400 ml-1">(TB)</span>}
-          </span>
+          
+          {/* Set number display - BIG and prominent */}
+          <div className="flex flex-col items-center min-w-[80px]">
+            <span className="text-white font-black text-2xl md:text-3xl leading-none">
+              {currentSet}
+            </span>
+            <span className="text-white/60 text-[10px] md:text-xs font-semibold uppercase tracking-wider">
+              Set {isTiebreak && <span className="text-yellow-400">TB</span>}
+            </span>
+          </div>
+
           <button
             onClick={() => onSetCurrentSet(currentSet + 1)}
             disabled={currentSet >= maxSet}
-            className="w-6 h-6 rounded bg-slate-700 text-white/80 text-xs hover:bg-slate-600 active:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+            className="w-8 h-8 rounded-lg bg-slate-700 text-white text-sm font-bold hover:bg-slate-600 active:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
             title="Set successivo"
           >
             +
           </button>
-          <span className="text-white/50 text-xs ml-1">
-            {team1Sets}-{team2Sets}
-          </span>
         </div>
 
         {/* First to target indicator */}
