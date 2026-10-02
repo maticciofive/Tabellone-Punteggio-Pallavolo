@@ -739,7 +739,7 @@
         </div>
 
         <div class="court-container" id="court">
-            <div class="team-zone" id="zone-team1" onclick="addPoint(1)" oncontextmenu="return false;">
+            <div class="team-zone" id="zone-team1" oncontextmenu="return false;">
                 <div class="team-header">
                     <div class="team-name" id="display-name-1">Squadra 1</div>
                     <div class="sets-badge">
@@ -757,7 +757,7 @@
                 <div class="hint">Tap = +1 | Pressione lunga = -1</div>
             </div>
 
-            <div class="team-zone" id="zone-team2" onclick="addPoint(2)" oncontextmenu="return false;">
+            <div class="team-zone" id="zone-team2" oncontextmenu="return false;">
                 <div class="team-header">
                     <div class="team-name" id="display-name-2">Squadra 2</div>
                     <div class="sets-badge">
@@ -831,6 +831,7 @@
             firstToTarget: null,
             pressTimer: null,
             isLongPress: false,
+            currentPressTeam: null,
             team1Logo: null,
             team2Logo: null
         };
@@ -922,16 +923,46 @@
         function setupLongPress() {
             const zones = [document.getElementById('zone-team1'), document.getElementById('zone-team2')];
             zones.forEach((zone, idx) => {
-                zone.addEventListener('mousedown', (e) => startPress(e, idx + 1));
-                zone.addEventListener('touchstart', (e) => startPress(e, idx + 1));
-                zone.addEventListener('mouseup', endPress);
-                zone.addEventListener('mouseleave', endPress);
-                zone.addEventListener('touchend', endPress);
+                const teamIdx = idx + 1;
+                
+                // Remove onclick to prevent double events
+                zone.removeAttribute('onclick');
+                
+                // Touch events
+                zone.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    startPress(teamIdx);
+                }, { passive: false });
+                
+                zone.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    endPress(teamIdx);
+                }, { passive: false });
+                
+                zone.addEventListener('touchcancel', () => {
+                    cancelPress();
+                });
+                
+                // Mouse events (for desktop)
+                zone.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    startPress(teamIdx);
+                });
+                
+                zone.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    endPress(teamIdx);
+                });
+                
+                zone.addEventListener('mouseleave', () => {
+                    cancelPress();
+                });
             });
         }
 
-        function startPress(e, teamIdx) {
+        function startPress(teamIdx) {
             state.isLongPress = false;
+            state.currentPressTeam = teamIdx;
             state.pressTimer = setTimeout(() => {
                 state.isLongPress = true;
                 subtractPoint(teamIdx);
@@ -941,19 +972,27 @@
             }, 500);
         }
 
-        function endPress() {
+        function endPress(teamIdx) {
             if (state.pressTimer) {
                 clearTimeout(state.pressTimer);
                 state.pressTimer = null;
             }
+            
+            // If it wasn't a long press, add point
+            if (!state.isLongPress) {
+                addPoint(teamIdx);
+            }
+        }
+
+        function cancelPress() {
+            if (state.pressTimer) {
+                clearTimeout(state.pressTimer);
+                state.pressTimer = null;
+            }
+            state.isLongPress = false;
         }
 
         function addPoint(teamIdx) {
-            if (state.isLongPress) {
-                state.isLongPress = false;
-                return;
-            }
-
             const idx = teamIdx - 1;
             state.scores[idx]++;
 
@@ -1232,6 +1271,13 @@
                 } else {
                     court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row' : 'column';
                 }
+            }
+        });
+
+        // Initialize long press on page load
+        window.addEventListener('load', () => {
+            if (document.getElementById('game-screen').style.display === 'flex') {
+                setupLongPress();
             }
         });
     </script>
