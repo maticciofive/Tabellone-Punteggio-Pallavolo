@@ -62,6 +62,35 @@
             border-radius: 8px;
         }
 
+        input[type="file"] {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #334155;
+            color: white;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            background: #475569;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .logo-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: rgba(0,0,0,0.2);
+            margin-top: 8px;
+        }
+
         .row {
             display: flex;
             gap: 10px;
@@ -221,6 +250,57 @@
         @media (min-width: 768px) {
             .team-header {
                 gap: 12px;
+            }
+        }
+
+        .team-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: contain;
+            background: rgba(255,255,255,0.1);
+            padding: 4px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        @media (min-width: 768px) {
+            .team-logo {
+                width: 50px;
+                height: 50px;
+            }
+        }
+
+        @media (orientation: landscape) {
+            .team-logo {
+                width: 35px;
+                height: 35px;
+            }
+        }
+
+        @media (min-width: 768px) and (orientation: landscape) {
+            .team-logo {
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        .team-logo-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        @media (min-width: 768px) {
+            .team-logo-placeholder {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
             }
         }
 
@@ -550,6 +630,12 @@
             </div>
         </div>
 
+        <div class="form-group">
+            <label>Logo Squadra 1 (opzionale)</label>
+            <input type="file" id="team1-logo" accept="image/*" onchange="previewLogo(1)">
+            <img id="logo-preview-1" class="logo-preview" style="display:none;">
+        </div>
+
         <div class="row">
             <div class="form-group" style="flex:1;">
                 <label>Squadra 2</label>
@@ -559,6 +645,12 @@
                 <label>Colore S2</label>
                 <input type="color" id="team2-color" value="#ef4444">
             </div>
+        </div>
+
+        <div class="form-group">
+            <label>Logo Squadra 2 (opzionale)</label>
+            <input type="file" id="team2-logo" accept="image/*" onchange="previewLogo(2)">
+            <img id="logo-preview-2" class="logo-preview" style="display:none;">
         </div>
 
         <div class="form-group">
@@ -625,6 +717,9 @@
         <div class="court-container" id="court">
             <div class="team-zone" id="zone-team1" onclick="addPoint(1)" oncontextmenu="return false;">
                 <div class="team-header">
+                    <div id="logo-container-1">
+                        <div class="team-logo-placeholder">🏐</div>
+                    </div>
                     <div class="team-name" id="display-name-1">Squadra 1</div>
                     <div class="sets-badge">
                         <div id="sets-dots-1"></div>
@@ -640,6 +735,9 @@
 
             <div class="team-zone" id="zone-team2" onclick="addPoint(2)" oncontextmenu="return false;">
                 <div class="team-header">
+                    <div id="logo-container-2">
+                        <div class="team-logo-placeholder">🏐</div>
+                    </div>
                     <div class="team-name" id="display-name-2">Squadra 2</div>
                     <div class="sets-badge">
                         <div id="sets-dots-2"></div>
@@ -708,13 +806,38 @@
             setHistory: [],
             firstToTarget: null,
             pressTimer: null,
-            isLongPress: false
+            isLongPress: false,
+            team1Logo: null,
+            team2Logo: null
         };
 
         // Setup toggle for cap
         document.getElementById('require-diff').addEventListener('change', function() {
             document.getElementById('cap-wrapper').style.display = this.checked ? 'block' : 'none';
         });
+
+        // Logo preview and storage
+        function previewLogo(teamNum) {
+            const input = document.getElementById(`team${teamNum}-logo`);
+            const preview = document.getElementById(`logo-preview-${teamNum}`);
+            const file = input.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    // Store in state
+                    if (teamNum === 1) {
+                        state.team1Logo = e.target.result;
+                    } else {
+                        state.team2Logo = e.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
         function startGame() {
             state.config = {
@@ -743,12 +866,33 @@
             state.setHistory = [];
             state.firstToTarget = null;
 
+            // Load logos
+            loadLogos();
+
             // Show game screen
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
 
             updateUI();
             setupLongPress();
+        }
+
+        function loadLogos() {
+            // Team 1 logo
+            const logo1Container = document.getElementById('logo-container-1');
+            if (state.team1Logo) {
+                logo1Container.innerHTML = `<img src="${state.team1Logo}" class="team-logo" alt="Logo ${state.config.team1Name}">`;
+            } else {
+                logo1Container.innerHTML = '<div class="team-logo-placeholder">🏐</div>';
+            }
+
+            // Team 2 logo
+            const logo2Container = document.getElementById('logo-container-2');
+            if (state.team2Logo) {
+                logo2Container.innerHTML = `<img src="${state.team2Logo}" class="team-logo" alt="Logo ${state.config.team2Name}">`;
+            } else {
+                logo2Container.innerHTML = '<div class="team-logo-placeholder">🏐</div>';
+            }
         }
 
         function setupLongPress() {
@@ -972,12 +1116,28 @@
             if (confirm('Sei sicuro di voler abbandonare la partita in corso?')) {
                 document.getElementById('game-screen').style.display = 'none';
                 document.getElementById('setup-screen').style.display = 'flex';
+                
+                // Reset logos
+                state.team1Logo = null;
+                state.team2Logo = null;
+                document.getElementById('team1-logo').value = '';
+                document.getElementById('team2-logo').value = '';
+                document.getElementById('logo-preview-1').style.display = 'none';
+                document.getElementById('logo-preview-2').style.display = 'none';
             }
         }
 
         function newMatch() {
             document.getElementById('victory-screen').style.display = 'none';
             document.getElementById('setup-screen').style.display = 'flex';
+            
+            // Reset logos
+            state.team1Logo = null;
+            state.team2Logo = null;
+            document.getElementById('team1-logo').value = '';
+            document.getElementById('team2-logo').value = '';
+            document.getElementById('logo-preview-1').style.display = 'none';
+            document.getElementById('logo-preview-2').style.display = 'none';
         }
 
         function updateUI() {
