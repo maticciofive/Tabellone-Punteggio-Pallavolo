@@ -1,28 +1,695 @@
-<!doctype html>
-<html lang="it" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <base href="./" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Volley Scoreboard - Tabellone Pallavolo</title>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tabellone Pallavolo</title>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background-color: #0f172a;
-        color: #ffffff;
-      }
-      #root {
-        width: 100%;
-        height: 100%;
-      }
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --team1-color: #ff4d4d;
+            --team2-color: #4d94ff;
+            --overlay-color: rgba(0, 0, 0, 0.7);
+            --modal-bg: #2a2a2a;
+            --accent: #ffd700;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            touch-action: none; /* Prevents zooming/scrolling on mobile */
+        }
+
+        /* --- SETUP SCREEN --- */
+        #setup-screen {
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        input[type="text"], input[type="number"], select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background: #333;
+            color: white;
+            font-size: 1rem;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button.primary-btn {
+            background-color: var(--accent);
+            color: black;
+            border: none;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.1s;
+        }
+
+        button.primary-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* --- GAME SCREEN --- */
+        #game-screen {
+            display: none; /* Hidden initially */
+            flex: 1;
+            width: 100%;
+            position: relative;
+        }
+
+        .court-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            flex-direction: row; /* Default landscape */
+        }
+
+        @media (orientation: portrait) {
+            .court-container {
+                flex-direction: column; /* Vertical for portrait */
+            }
+        }
+
+        .team-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            transition: filter 0.1s;
+        }
+
+        .team-zone:active {
+            filter: brightness(1.2);
+        }
+
+        .team-header {
+            text-align: center;
+            width: 100%;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .team-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .score-display {
+            font-size: 15vw; /* Huge responsive font */
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        @media (min-width: 600px) {
+            .score-display {
+                font-size: 10rem;
+            }
+        }
+
+        .sets-indicator {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .set-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .set-dot.won {
+            background: currentColor;
+            border-color: currentColor;
+        }
+
+        /* Controls Overlay */
+        .controls-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- MODALS & POPUPS --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay-color);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: var(--modal-bg);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+
+        .modal-text {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .btn-close-modal {
+            background: var(--accent);
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Feedback Animation */
+        .flash-effect {
+            animation: flash 0.3s ease-out;
+        }
+
+        @keyframes flash {
+            0% { background-color: rgba(255,255,255,0.3); }
+            100% { background-color: transparent; }
+        }
+        
+        .hidden { display: none !important; }
     </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+</head>
+<body>
+
+    <!-- SCHERMATA DI SETUP -->
+    <div id="setup-screen">
+        <h2 style="text-align:center; margin-bottom:10px;">Configurazione Partita</h2>
+        
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label>Squadra 1 Nome</label>
+                <input type="text" id="team1-name" value="Squadra A">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Colore S1</label>
+                <input type="color" id="team1-color" value="#ff4d4d">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label>Squadra 2 Nome</label>
+                <input type="text" id="team2-name" value="Squadra B">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Colore S2</label>
+                <input type="color" id="team2-color" value="#4d94ff">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Set per vincere la partita</label>
+            <select id="sets-to-win">
+                <option value="2">Al meglio dei 3 (2 set)</option>
+                <option value="3" selected>Al meglio dei 5 (3 set)</option>
+                <option value="4">Al meglio dei 7 (4 set)</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label>Punti Set Normale</label>
+                <input type="number" id="points-normal" value="25" min="1">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Punti Tie-Break</label>
+                <input type="number" id="points-tiebreak" value="15" min="1">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" id="require-diff" checked>
+                Richiedi vittoria con 2 punti di scarto
+            </label>
+        </div>
+
+        <div class="form-group" id="cap-wrapper">
+            <label>Limite massimo punti (0 = infinito)</label>
+            <input type="number" id="point-cap" value="0" min="0">
+        </div>
+
+        <button class="primary-btn" onclick="startGame()">Inizia Partita</button>
+    </div>
+
+    <!-- SCHERMATA DI GIOCO -->
+    <div id="game-screen">
+        <div class="court-container" id="court">
+            <!-- Team 1 Zone -->
+            <div class="team-zone" id="zone-team1" style="background-color: var(--team1-color);" ontouchstart="handleTouchStart(event, 1)" ontouchend="handleTouchEnd(event, 1)" onclick="addPoint(1)">
+                <div class="team-header">
+                    <div class="team-name" id="display-name-1">Team 1</div>
+                    <div class="sets-indicator" id="sets-1"></div>
+                </div>
+                <div class="score-display" id="score-1">0</div>
+                <div style="height: 20px;"></div> <!-- Spacer -->
+            </div>
+
+            <!-- Team 2 Zone -->
+            <div class="team-zone" id="zone-team2" style="background-color: var(--team2-color);" ontouchstart="handleTouchStart(event, 2)" ontouchend="handleTouchEnd(event, 2)" onclick="addPoint(2)">
+                <div class="team-header">
+                    <div class="team-name" id="display-name-2">Team 2</div>
+                    <div class="sets-indicator" id="sets-2"></div>
+                </div>
+                <div class="score-display" id="score-2">0</div>
+                <div style="height: 20px;"></div> <!-- Spacer -->
+            </div>
+        </div>
+
+        <!-- Controlli -->
+        <div class="controls-bar">
+            <button class="control-btn" onclick="swapSides()">Cambia Campo</button>
+            <button class="control-btn" onclick="undoLastAction()">Indietro / Annulla</button>
+            <button class="control-btn" onclick="resetMatch()">Nuova Partita</button>
+        </div>
+    </div>
+
+    <!-- MODAL SET FINITO -->
+    <div class="modal-overlay" id="modal-set-finished">
+        <div class="modal-content">
+            <h2 class="modal-title" id="modal-set-winner">Set Finito!</h2>
+            <p class="modal-text" id="modal-set-score">0 - 0</p>
+            <button class="btn-close-modal" onclick="nextSet()">Prossimo Set</button>
+        </div>
+    </div>
+
+    <!-- MODAL VITTORIA PARTITA -->
+    <div class="modal-overlay" id="modal-match-victory">
+        <div class="modal-content">
+            <h2 class="modal-title">Vittoria!</h2>
+            <p class="modal-text" id="modal-match-winner">La Squadra X vince la partita!</p>
+            <button class="btn-close-modal" onclick="resetMatch()">Nuova Partita</button>
+        </div>
+    </div>
+
+    <script>
+        // Stato del gioco
+        const state = {
+            config: {},
+            scores: [0, 0],
+            setsWon: [0, 0],
+            currentSet: 1,
+            isTieBreak: false,
+            history: [], // Per funzione "Indietro"
+            lastTapTime: 0,
+            tapTimer: null
+        };
+
+        // Elementi DOM
+        const els = {
+            setupScreen: document.getElementById('setup-screen'),
+            gameScreen: document.getElementById('game-screen'),
+            score1: document.getElementById('score-1'),
+            score2: document.getElementById('score-2'),
+            name1: document.getElementById('display-name-1'),
+            name2: document.getElementById('display-name-2'),
+            sets1: document.getElementById('sets-1'),
+            sets2: document.getElementById('sets-2'),
+            zone1: document.getElementById('zone-team1'),
+            zone2: document.getElementById('zone-team2'),
+            modalSet: document.getElementById('modal-set-finished'),
+            modalVictory: document.getElementById('modal-match-victory')
+        };
+
+        // Inizializzazione Toggle Cap
+        document.getElementById('require-diff').addEventListener('change', function() {
+            const capWrapper = document.getElementById('cap-wrapper');
+            if(this.checked) {
+                capWrapper.style.display = 'block';
+            } else {
+                capWrapper.style.display = 'none';
+            }
+        });
+
+        function startGame() {
+            // Salva configurazione
+            state.config = {
+                team1Name: document.getElementById('team1-name').value || 'Squadra 1',
+                team2Name: document.getElementById('team2-name').value || 'Squadra 2',
+                team1Color: document.getElementById('team1-color').value,
+                team2Color: document.getElementById('team2-color').value,
+                setsToWin: parseInt(document.getElementById('sets-to-win').value),
+                pointsNormal: parseInt(document.getElementById('points-normal').value),
+                pointsTieBreak: parseInt(document.getElementById('points-tiebreak').value),
+                requireDiff: document.getElementById('require-diff').checked,
+                pointCap: parseInt(document.getElementById('point-cap').value)
+            };
+
+            // Applica colori alle variabili CSS e agli elementi
+            document.documentElement.style.setProperty('--team1-color', state.config.team1Color);
+            document.documentElement.style.setProperty('--team2-color', state.config.team2Color);
+            
+            els.name1.textContent = state.config.team1Name;
+            els.name2.textContent = state.config.team2Name;
+
+            // Reset stato
+            resetGameState();
+
+            // Mostra schermata gioco
+            els.setupScreen.classList.add('hidden');
+            els.gameScreen.style.display = 'block';
+        }
+
+        function resetGameState() {
+            state.scores = [0, 0];
+            state.setsWon = [0, 0];
+            state.currentSet = 1;
+            state.isTieBreak = false;
+            state.history = [];
+            updateUI();
+        }
+
+        function updateUI() {
+            els.score1.textContent = state.scores[0];
+            els.score2.textContent = state.scores[1];
+
+            renderSetsIndicator(els.sets1, state.setsWon[0], state.config.setsToWin, state.config.team1Color);
+            renderSetsIndicator(els.sets2, state.setsWon[1], state.config.setsToWin, state.config.team2Color);
+        }
+
+        function renderSetsIndicator(container, wonCount, totalNeeded, color) {
+            container.innerHTML = '';
+            for(let i=0; i<totalNeeded; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'set-dot' + (i < wonCount ? ' won' : '');
+                dot.style.color = color; // For the 'won' background via currentColor
+                container.appendChild(dot);
+            }
+        }
+
+        // Logica Punti e Interazione
+        function addPoint(teamIndex) {
+            // teamIndex: 1 or 2
+            const idx = teamIndex - 1;
+            
+            // Salva snapshot per undo
+            saveHistory();
+
+            state.scores[idx]++;
+            checkSetEnd();
+            updateUI();
+        }
+
+        function subtractPoint(teamIndex) {
+            const idx = teamIndex - 1;
+            if(state.scores[idx] > 0) {
+                saveHistory();
+                state.scores[idx]--;
+                updateUI();
+            }
+        }
+
+        function saveHistory() {
+            state.history.push({
+                scores: [...state.scores],
+                setsWon: [...state.setsWon],
+                currentSet: state.currentSet,
+                isTieBreak: state.isTieBreak
+            });
+            // Limita dimensione storia per memoria
+            if(state.history.length > 50) state.history.shift();
+        }
+
+        function undoLastAction() {
+            if(state.history.length === 0) return;
+            const lastState = state.history.pop();
+            state.scores = lastState.scores;
+            state.setsWon = lastState.setsWon;
+            state.currentSet = lastState.currentSet;
+            state.isTieBreak = lastState.isTieBreak;
+            updateUI();
+        }
+
+        function handleTouchStart(e, teamIndex) {
+            // Long press detection
+            state.tapTimer = setTimeout(() => {
+                subtractPoint(teamIndex);
+                triggerFlash(teamIndex);
+                // Prevent click event from firing after long press
+                e.preventDefault(); 
+            }, 600); // 600ms threshold for long press
+            
+            // Double tap detection logic handled partly by preventing default behavior if needed, 
+            // but here we rely on the fact that a quick tap fires 'click' which adds point.
+            // If they lift finger quickly, timer is cleared in TouchEnd.
+        }
+
+        function handleTouchEnd(e, teamIndex) {
+            clearTimeout(state.tapTimer);
+            // Note: The 'click' event will still fire naturally on desktop/mobile browsers 
+            // unless we prevent it aggressively. However, standard behavior usually allows 
+            // both touch and click. To avoid double addition on some devices, we might need 
+            // careful flagging. For simplicity in this vanilla demo, relying on 'click' for add 
+            // and 'longpress' for subtract is common.
+            
+            // Visual feedback for normal tap is handled by CSS :active mostly, 
+            // but we can add explicit flash if desired.
+        }
+
+        function triggerFlash(teamIndex) {
+            const zone = teamIndex === 1 ? els.zone1 : els.zone2;
+            zone.classList.remove('flash-effect');
+            void zone.offsetWidth; // Trigger reflow
+            zone.classList.add('flash-effect');
+        }
+
+        function checkSetEnd() {
+            const s1 = state.scores[0];
+            const s2 = state.scores[1];
+            const target = state.isTieBreak ? state.config.pointsTieBreak : state.config.pointsNormal;
+            const diffReq = state.config.requireDiff;
+            const cap = state.config.pointCap;
+
+            let winner = -1;
+
+            // Check win conditions
+            if (s1 >= target && s2 >= target) {
+                // Both reached target
+                if (diffReq) {
+                    if (Math.abs(s1 - s2) >= 2) {
+                        winner = s1 > s2 ? 0 : 1;
+                    }
+                } else {
+                    winner = s1 > s2 ? 0 : 1;
+                }
+                
+                // Check Cap
+                if (winner !== -1 && cap > 0) {
+                    if (Math.max(s1, s2) >= cap) {
+                        // Cap reached, determine winner based on who hit cap first or higher score
+                        // Simplified: whoever has higher score wins if cap hit
+                         winner = s1 > s2 ? 0 : 1;
+                    }
+                }
+            } else if (s1 >= target) {
+                if (!diffReq || (diffReq && s1 - s2 >= 2)) {
+                     if (cap > 0 && s1 >= cap) winner = 0;
+                     else if (cap == 0) winner = 0;
+                     else if (s1 < cap) winner = 0; // Wait, if cap exists and not reached, but diff met?
+                     // Logic correction: If cap exists, you must reach cap OR lead by diff AND be at least target?
+                     // Standard Volleyball: You win if you reach target AND lead by 2. If cap is set, you win if you reach cap (regardless of diff usually, or diff applies until cap).
+                     // Let's stick to simple: Target reached + Diff (if req) -> Win. If Cap set, Cap overrides Diff requirement usually.
+                     // Refined Logic:
+                     if (cap > 0 && s1 >= cap) winner = 0;
+                     else if (cap == 0) winner = 0;
+                     else if (diffReq && s1 - s2 >= 2) winner = 0; // If cap not reached yet but diff satisfied? No, must reach target.
+                     // Actually, if cap is 27, and score is 25-23, game continues. If 26-24, game ends (target 25+diff2). If 27-25, game ends (cap).
+                     
+                     // Re-evaluating standard logic:
+                     // Win if: (Score >= Target) AND ((Score - Opponent >= 2) OR (Score >= Cap))
+                     if (s1 >= target) {
+                         if (s1 - s2 >= 2) winner = 0;
+                         else if (cap > 0 && s1 >= cap) winner = 0;
+                     }
+                 }
+            } else if (s2 >= target) {
+                 if (s2 >= target) {
+                     if (s2 - s1 >= 2) winner = 1;
+                     else if (cap > 0 && s2 >= cap) winner = 1;
+                 }
+            }
+
+            if (winner !== -1) {
+                endSet(winner);
+            }
+        }
+
+        function endSet(winnerIdx) {
+            // Stop interactions temporarily
+            state.scores[winnerIdx] = state.scores[winnerIdx]; // Just confirming
+            
+            state.setsWon[winnerIdx]++;
+            
+            // Show Modal
+            const winnerName = winnerIdx === 0 ? state.config.team1Name : state.config.team2Name;
+            document.getElementById('modal-set-winner').textContent = `Set vinto da ${winnerName}!`;
+            document.getElementById('modal-set-score').textContent = `${state.scores[0]} - ${state.scores[1]}`;
+            els.modalSet.style.display = 'flex';
+
+            // Check Match Victory
+            if (state.setsWon[winnerIdx] >= state.config.setsToWin) {
+                // Delay victory screen slightly or show immediately? Usually show set win then match win.
+                // We'll keep set modal open, and when clicking "Next Set", check for match win there.
+            }
+        }
+
+        function nextSet() {
+            els.modalSet.style.display = 'none';
+            
+            // Check if match over
+            if (state.setsWon[0] >= state.config.setsToWin || state.setsWon[1] >= state.config.setsToWin) {
+                showMatchVictory();
+                return;
+            }
+
+            // Prepare next set
+            state.scores = [0, 0];
+            state.currentSet++;
+            
+            // Determine if tie-break
+            // Tie-break is usually the final possible set (e.g., 5th set in best of 5)
+            const totalPossibleSets = state.config.setsToWin * 2 - 1; // Best of 3 -> 5? No. Best of 3 means first to 2. Max sets 3.
+            // Simpler: If currentSet is the one where one more win decides it? 
+            // Or simply: If setsToWin is 3, tie break is set 5? No, volleyball matches don't have "tie breaks" as a separate rule usually, 
+            // the LAST set just has different scoring (15 pts instead of 25).
+            // So: If currentSet == (2 * setsToWin - 1)? 
+            // Example: Best of 5 (first to 3). Sets 1,2,3,4,5. Set 5 is tie-break.
+            // Formula: Last set index = (2 * setsToWin) - 1? 
+            // If setsToWin=2 (Best of 3): Last set is 3. 2*2-1 = 3. Correct.
+            // If setsToWin=3 (Best of 5): Last set is 5. 2*3-1 = 5. Correct.
+            
+            const lastSetNumber = (state.config.setsToWin * 2) - 1;
+            
+            if (state.currentSet === lastSetNumber) {
+                state.isTieBreak = true;
+            } else {
+                state.isTieBreak = false;
+            }
+
+            updateUI();
+        }
+
+        function showMatchVictory() {
+            const winnerIdx = state.setsWon[0] > state.setsWon[1] ? 0 : 1;
+            const winnerName = winnerIdx === 0 ? state.config.team1Name : state.config.team2Name;
+            document.getElementById('modal-match-winner').textContent = `${winnerName} ha vinto la partita!`;
+            els.modalVictory.style.display = 'flex';
+        }
+
+        function swapSides() {
+            const court = document.getElementById('court');
+            // Swap classes or inline styles? Easier to swap content references visually by swapping order in DOM
+            // Since zones are siblings, we can appendChild to reverse order
+            if (court.firstChild.id === 'zone-team1') {
+                court.appendChild(els.zone1);
+            } else {
+                court.appendChild(els.zone2);
+            }
+        }
+
+        function resetMatch() {
+            els.modalVictory.style.display = 'none';
+            els.modalSet.style.display = 'none';
+            els.gameScreen.style.display = 'none';
+            els.setupScreen.classList.remove('hidden');
+            resetGameState();
+        }
+
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+    </script>
+</body>
 </html>
