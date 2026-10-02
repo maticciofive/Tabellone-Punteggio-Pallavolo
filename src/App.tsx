@@ -25,6 +25,7 @@ interface GameState {
   currentSet: number;
   teamsSwapped: boolean;
   setHistory: { team1: number; team2: number; winner: 1 | 2 }[];
+  firstToTarget: 1 | 2 | null; // Chi ha raggiunto per primo il target punti
 }
 
 // ============================================================
@@ -220,6 +221,8 @@ function TeamArea({
   onTap,
   onSubtract,
   isLandscape,
+  isFirstToTarget,
+  targetPoints,
 }: {
   name: string;
   score: number;
@@ -228,6 +231,8 @@ function TeamArea({
   onTap: () => void;
   onSubtract: () => void;
   isLandscape: boolean;
+  isFirstToTarget: boolean;
+  targetPoints: number;
 }) {
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPressRef = useRef(false);
@@ -329,12 +334,96 @@ function TeamArea({
         </span>
       </div>
 
+      {/* First to target indicator */}
+      {isFirstToTarget && (
+        <div
+          className="mt-1 px-3 py-1 rounded-full bg-yellow-400/30 border-2 border-yellow-400 animate-pulse"
+          style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+        >
+          <span className="text-yellow-200 font-bold text-xs md:text-sm">
+            ⭐ Primo a {targetPoints}!
+          </span>
+        </div>
+      )}
+
       {/* Hint */}
       <div
         className="absolute bottom-2 text-white/40 text-[10px] md:text-xs"
         style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
       >
         Tap = +1 | Pressione lunga = -1
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SET HISTORY PANEL COMPONENT
+// ============================================================
+function SetHistoryPanel({
+  config,
+  setHistory,
+  currentSet,
+  onClose,
+}: {
+  config: GameConfig;
+  setHistory: { team1: number; team2: number; winner: 1 | 2 }[];
+  currentSet: number;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="bg-slate-800 rounded-2xl shadow-2xl p-4 md:p-6 max-w-sm w-full border border-slate-600 animate-bounce-in">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white">📋 Storico Set</h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-slate-700 text-white/80 hover:bg-slate-600 flex items-center justify-center"
+          >
+            ✕
+          </button>
+        </div>
+
+        {setHistory.length === 0 ? (
+          <p className="text-slate-400 text-center py-4">Nessun set completato</p>
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {setHistory.map((set, i) => (
+              <div
+                key={i}
+                className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                  set.winner === 1 ? 'bg-blue-900/30 border border-blue-700/50' : 'bg-red-900/30 border border-red-700/50'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-white/60 text-xs font-semibold">Set {i + 1}</span>
+                  <span className="text-yellow-400 text-xs">
+                    {set.winner === 1 ? '🏆' : '🏆'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span
+                    className={`font-bold ${set.winner === 1 ? 'text-blue-400' : 'text-white/50'}`}
+                  >
+                    {config.team1Name}: {set.team1}
+                  </span>
+                  <span className="text-slate-600">-</span>
+                  <span
+                    className={`font-bold ${set.winner === 2 ? 'text-red-400' : 'text-white/50'}`}
+                  >
+                    {config.team2Name}: {set.team2}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 pt-3 border-t border-slate-700">
+          <p className="text-slate-400 text-xs text-center">
+            Set in corso: <span className="text-white font-semibold">{currentSet}</span>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -351,6 +440,7 @@ function GameScreen({
   onSwapTeams,
   onUndoSet,
   onBackToSetup,
+  onSetCurrentSet,
 }: {
   config: GameConfig;
   gameState: GameState;
@@ -359,8 +449,10 @@ function GameScreen({
   onSwapTeams: () => void;
   onUndoSet: () => void;
   onBackToSetup: () => void;
+  onSetCurrentSet: (set: number) => void;
 }) {
   const [isLandscape, setIsLandscape] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -375,7 +467,9 @@ function GameScreen({
     };
   }, []);
 
-  const { team1Score, team2Score, team1Sets, team2Sets, currentSet, teamsSwapped } = gameState;
+  const { team1Score, team2Score, team1Sets, team2Sets, currentSet, teamsSwapped, setHistory, firstToTarget } = gameState;
+  const maxSet = config.setsToWin * 2 - 1;
+  const target = currentSet === maxSet ? config.tiebreakPoints : config.targetPoints;
 
   // Determine which team is displayed on left/top
   const leftTeam = teamsSwapped ? 2 : 1;
@@ -396,17 +490,53 @@ function GameScreen({
   return (
     <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-slate-900">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-2 py-1 bg-slate-900/90 border-b border-slate-700 z-10">
-        <div className="flex items-center gap-2">
-          <span className="text-white/70 text-xs font-semibold">
-            Set {currentSet}
-            {isTiebreak && <span className="text-yellow-400 ml-1">(Tie-break)</span>}
+      <div className="flex items-center justify-between px-2 py-1 bg-slate-900/90 border-b border-slate-700 z-10 flex-wrap gap-1">
+        {/* Set selector + info */}
+        <div className="flex items-center gap-1">
+          {/* Set selector buttons */}
+          <button
+            onClick={() => onSetCurrentSet(currentSet - 1)}
+            disabled={currentSet <= 1}
+            className="w-6 h-6 rounded bg-slate-700 text-white/80 text-xs hover:bg-slate-600 active:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+            title="Set precedente"
+          >
+            −
+          </button>
+          <span className="text-white/70 text-xs font-semibold min-w-[60px] text-center">
+            Set {currentSet}/{maxSet}
+            {isTiebreak && <span className="text-yellow-400 ml-1">(TB)</span>}
           </span>
-          <span className="text-white/50 text-xs">
-            | {team1Sets} - {team2Sets}
+          <button
+            onClick={() => onSetCurrentSet(currentSet + 1)}
+            disabled={currentSet >= maxSet}
+            className="w-6 h-6 rounded bg-slate-700 text-white/80 text-xs hover:bg-slate-600 active:bg-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+            title="Set successivo"
+          >
+            +
+          </button>
+          <span className="text-white/50 text-xs ml-1">
+            {team1Sets}-{team2Sets}
           </span>
         </div>
+
+        {/* First to target indicator */}
+        {firstToTarget && (
+          <div className="px-2 py-0.5 rounded-full bg-yellow-500/20 border border-yellow-500/50 animate-pulse">
+            <span className="text-yellow-300 text-[10px] font-bold">
+              ⭐ Primo a {target}: {firstToTarget === 1 ? config.team1Name : config.team2Name}
+            </span>
+          </div>
+        )}
+
+        {/* Action buttons */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowHistory(true)}
+            className="px-2 py-1 rounded bg-slate-700 text-white/80 text-xs hover:bg-slate-600 active:bg-slate-500 transition-colors"
+            title="Storico set"
+          >
+            📋
+          </button>
           <button
             onClick={onSwapTeams}
             className="px-2 py-1 rounded bg-slate-700 text-white/80 text-xs hover:bg-slate-600 active:bg-slate-500 transition-colors"
@@ -444,6 +574,8 @@ function GameScreen({
           onTap={() => onAddPoint(leftTeam as 1 | 2)}
           onSubtract={() => onSubtractPoint(leftTeam as 1 | 2)}
           isLandscape={isLandscape}
+          isFirstToTarget={firstToTarget === leftTeam}
+          targetPoints={target}
         />
 
         {/* Divider */}
@@ -467,8 +599,20 @@ function GameScreen({
           onTap={() => onAddPoint(rightTeam as 1 | 2)}
           onSubtract={() => onSubtractPoint(rightTeam as 1 | 2)}
           isLandscape={isLandscape}
+          isFirstToTarget={firstToTarget === rightTeam}
+          targetPoints={target}
         />
       </div>
+
+      {/* Set History Panel */}
+      {showHistory && (
+        <SetHistoryPanel
+          config={config}
+          setHistory={setHistory}
+          currentSet={currentSet}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   );
 }
@@ -614,6 +758,7 @@ export default function App() {
     currentSet: 1,
     teamsSwapped: false,
     setHistory: [],
+    firstToTarget: null,
   });
   const [showSetModal, setShowSetModal] = useState(false);
   const [setModalData, setSetModalData] = useState<{
@@ -682,6 +827,17 @@ export default function App() {
         const newScore1 = team === 1 ? prev.team1Score + 1 : prev.team1Score;
         const newScore2 = team === 2 ? prev.team2Score + 1 : prev.team2Score;
 
+        // Track who reached the target first
+        const target = getTargetPoints();
+        let newFirstToTarget = prev.firstToTarget;
+        if (!newFirstToTarget) {
+          if (newScore1 >= target && newScore1 > prev.team1Score) {
+            newFirstToTarget = 1;
+          } else if (newScore2 >= target && newScore2 > prev.team2Score) {
+            newFirstToTarget = 2;
+          }
+        }
+
         // Check if set is won
         const setWinner = checkSetWin(newScore1, newScore2);
         if (setWinner) {
@@ -725,6 +881,7 @@ export default function App() {
             team1Sets: newTeam1Sets,
             team2Sets: newTeam2Sets,
             setHistory: newHistory,
+            firstToTarget: null, // Reset for next set
           };
         }
 
@@ -732,10 +889,11 @@ export default function App() {
           ...prev,
           team1Score: newScore1,
           team2Score: newScore2,
+          firstToTarget: newFirstToTarget,
         };
       });
     },
-    [checkSetWin, config, showSetModal]
+    [checkSetWin, config, showSetModal, getTargetPoints]
   );
 
   // Handle subtracting a point
@@ -777,8 +935,21 @@ export default function App() {
       team1Score: 0,
       team2Score: 0,
       currentSet: prev.currentSet + 1,
+      firstToTarget: null,
     }));
   }, [matchWinner]);
+
+  // Handle setting current set manually
+  const handleSetCurrentSet = useCallback((newSet: number) => {
+    if (!config) return;
+    const maxSet = config.setsToWin * 2 - 1;
+    const validSet = Math.max(1, Math.min(maxSet, newSet));
+    setGameState((prev) => ({
+      ...prev,
+      currentSet: validSet,
+      firstToTarget: null,
+    }));
+  }, [config]);
 
   // Handle swapping teams
   const handleSwapTeams = useCallback(() => {
@@ -808,6 +979,7 @@ export default function App() {
         team2Sets: newTeam2Sets,
         currentSet: prev.currentSet - 1,
         setHistory: newHistory,
+        firstToTarget: null,
       };
     });
   }, [gameState.setHistory]);
@@ -823,6 +995,7 @@ export default function App() {
       currentSet: 1,
       teamsSwapped: false,
       setHistory: [],
+      firstToTarget: null,
     });
     setMatchWinner(null);
     setShowSetModal(false);
@@ -861,6 +1034,7 @@ export default function App() {
             onSwapTeams={handleSwapTeams}
             onUndoSet={handleUndoSet}
             onBackToSetup={handleBackToSetup}
+            onSetCurrentSet={handleSetCurrentSet}
           />
 
           {/* Set Won Modal */}
