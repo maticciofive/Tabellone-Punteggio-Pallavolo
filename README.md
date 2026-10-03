@@ -40,10 +40,7 @@ L'app è progettata per funzionare come una **Progressive Web App (PWA)** senza 
 
 ## 🚀 Installazione e Deploy
 
-Essendo un singolo file HTML, non richiede build o installazioni complesse.
-
-- **Uso Locale:** Scarica il file `index.html` e aprilo con qualsiasi browser moderno (Chrome, Safari, Firefox, Edge).
-- **GitHub Pages:** Il progetto è pronto per essere ospitato su GitHub Pages. Il file `index.html` nella root della repository viene servito automaticamente come sito web statico.
+Collegati al link, imposta e sei online
 
 ## 🤝 Contributi
 
@@ -51,7 +48,7 @@ Sentiti libero di forkare la repository, proporre modifiche o segnalare bug tram
 
 ## 📄 Licenza
 
-Questo progetto è distribuito sotto licenza MIT. Sentiti libero di usarlo, modificarlo e condividerlo per le tue partite!
+Questo progetto è distribuito sotto licenza MIT. Sentiti libero di usarlo, e condividerlo per le tue partite!
 
 ---
 *Sviluppato con ❤️ per il mondo della pallavolo.*
