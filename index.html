@@ -125,27 +125,27 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 12px;
+            padding: 12px 16px;
             background: rgba(15, 23, 42, 0.9);
             border-bottom: 1px solid #334155;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 12px;
         }
 
         .set-selector {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
         .set-btn {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             border-radius: 8px;
             background: #334155;
             color: white;
             border: none;
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -159,24 +159,24 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 80px;
+            min-width: 100px;
         }
 
         .set-number {
-            font-size: 2rem;
+            font-size: 3rem;
             font-weight: 900;
             line-height: 1;
         }
 
         .set-label {
-            font-size: 10px;
+            font-size: 12px;
             opacity: 0.6;
             font-weight: 600;
             text-transform: uppercase;
         }
 
         .first-to-target {
-            padding: 2px 8px;
+            padding: 4px 12px;
             border-radius: 20px;
             background: rgba(234, 179, 8, 0.2);
             border: 1px solid rgba(234, 179, 8, 0.5);
@@ -185,7 +185,7 @@
 
         .first-to-target span {
             color: #fde047;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
         }
 
@@ -254,124 +254,131 @@
         }
 
         .team-logo-large {
-            width: clamp(80px, 25vw, 200px);
-            height: clamp(80px, 25vw, 200px);
+            width: clamp(120px, 35vw, 300px);
+            height: clamp(120px, 35vw, 300px);
             border-radius: 50%;
             object-fit: contain;
             background: rgba(255,255,255,0.15);
-            padding: 10px;
-            border: 3px solid rgba(255,255,255,0.3);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            margin: 10px 0;
+            padding: 15px;
+            border: 4px solid rgba(255,255,255,0.3);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+            margin: 15px 0;
         }
 
         @media (orientation: landscape) {
             .team-logo-large {
-                width: clamp(60px, 15vh, 180px);
-                height: clamp(60px, 15vh, 180px);
-                padding: 8px;
+                width: clamp(100px, 22vh, 280px);
+                height: clamp(100px, 22vh, 280px);
+                padding: 12px;
             }
         }
 
         @media (min-width: 768px) {
             .team-logo-large {
-                width: clamp(120px, 20vw, 250px);
-                height: clamp(120px, 20vw, 250px);
-                padding: 15px;
-                border-width: 4px;
+                width: clamp(180px, 28vw, 350px);
+                height: clamp(180px, 28vw, 350px);
+                padding: 20px;
+                border-width: 5px;
             }
         }
 
         @media (min-width: 768px) and (orientation: landscape) {
             .team-logo-large {
-                width: clamp(100px, 18vh, 220px);
-                height: clamp(100px, 18vh, 220px);
-                padding: 12px;
+                width: clamp(150px, 25vh, 320px);
+                height: clamp(150px, 25vh, 320px);
+                padding: 18px;
             }
         }
 
         .team-logo-placeholder-large {
-            width: clamp(80px, 25vw, 200px);
-            height: clamp(80px, 25vw, 200px);
+            width: clamp(120px, 35vw, 300px);
+            height: clamp(120px, 35vw, 300px);
             border-radius: 50%;
             background: rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(40px, 12vw, 100px);
-            border: 3px solid rgba(255,255,255,0.2);
-            margin: 10px 0;
+            font-size: clamp(60px, 18vw, 150px);
+            border: 4px solid rgba(255,255,255,0.2);
+            margin: 15px 0;
         }
 
         @media (orientation: landscape) {
             .team-logo-placeholder-large {
-                width: clamp(60px, 15vh, 180px);
-                height: clamp(60px, 15vh, 180px);
-                font-size: clamp(30px, 8vh, 90px);
+                width: clamp(100px, 22vh, 280px);
+                height: clamp(100px, 22vh, 280px);
+                font-size: clamp(50px, 12vh, 140px);
             }
         }
 
         @media (min-width: 768px) {
             .team-logo-placeholder-large {
-                width: clamp(120px, 20vw, 250px);
-                height: clamp(120px, 20vw, 250px);
-                font-size: clamp(60px, 10vw, 120px);
-                border-width: 4px;
+                width: clamp(180px, 28vw, 350px);
+                height: clamp(180px, 28vw, 350px);
+                font-size: clamp(90px, 15vw, 180px);
+                border-width: 5px;
             }
         }
 
         @media (min-width: 768px) and (orientation: landscape) {
             .team-logo-placeholder-large {
-                width: clamp(100px, 18vh, 220px);
-                height: clamp(100px, 18vh, 220px);
-                font-size: clamp(50px, 9vh, 110px);
+                width: clamp(150px, 25vh, 320px);
+                height: clamp(150px, 25vh, 320px);
+                font-size: clamp(75px, 13vh, 160px);
             }
         }
 
         .team-name {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: 900;
             text-transform: uppercase;
             text-align: center;
-            text-shadow: 0 3px 6px rgba(0,0,0,0.6);
+            text-shadow: 0 4px 8px rgba(0,0,0,0.7);
         }
 
         @media (orientation: landscape) {
             .team-name {
-                font-size: 1.25rem;
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .team-name {
+                font-size: 2.5rem;
             }
         }
 
         @media (min-width: 768px) and (orientation: landscape) {
             .team-name {
-                font-size: 1.875rem;
+                font-size: 2.25rem;
             }
         }
 
         @media (min-width: 1024px) and (orientation: landscape) {
             .team-name {
-                font-size: 2.25rem;
+                font-size: 3rem;
             }
         }
 
         .sets-badge {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             background: rgba(0,0,0,0.3);
-            border-radius: 20px;
-            padding: 4px 8px;
+            border-radius: 24px;
+            padding: 6px 12px;
         }
 
         @media (min-width: 768px) {
             .sets-badge {
-                padding: 6px 12px;
+                padding: 8px 16px;
+                gap: 8px;
             }
         }
 
         .set-dot {
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -379,35 +386,47 @@
 
         @media (min-width: 768px) {
             .set-dot {
-                width: 16px;
-                height: 16px;
+                width: 20px;
+                height: 20px;
             }
         }
 
         .sets-count {
-            font-size: 1.125rem;
+            font-size: 1.5rem;
             font-weight: 900;
             color: white;
-            margin-left: 4px;
+            margin-left: 6px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         @media (min-width: 768px) {
             .sets-count {
-                font-size: 1.5rem;
+                font-size: 2rem;
             }
         }
 
         .score-display {
-            font-size: clamp(5rem, 22vw, 12rem);
+            font-size: clamp(6rem, 28vw, 16rem);
             font-weight: 900;
             line-height: 1;
-            text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            text-shadow: 0 6px 12px rgba(0,0,0,0.5);
         }
 
         @media (orientation: landscape) {
             .score-display {
-                font-size: clamp(5rem, 18vh, 14rem);
+                font-size: clamp(6rem, 25vh, 18rem);
+            }
+        }
+
+        @media (min-width: 768px) {
+            .score-display {
+                font-size: clamp(8rem, 25vw, 20rem);
+            }
+        }
+
+        @media (min-width: 768px) and (orientation: landscape) {
+            .score-display {
+                font-size: clamp(8rem, 22vh, 22rem);
             }
         }
 
