@@ -122,20 +122,34 @@
         }
 
         .top-bar {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            justify-content: space-between;
             padding: 12px 16px;
             background: rgba(15, 23, 42, 0.9);
             border-bottom: 1px solid #334155;
-            flex-wrap: wrap;
             gap: 12px;
         }
 
-        .set-selector {
+        .top-bar-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            justify-self: start;
+        }
+
+        .top-bar-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-self: center;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            justify-self: end;
         }
 
         .set-btn {
@@ -163,7 +177,7 @@
         }
 
         .set-number {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 900;
             line-height: 1;
         }
@@ -173,6 +187,12 @@
             opacity: 0.6;
             font-weight: 600;
             text-transform: uppercase;
+        }
+
+        .sets-score-bar {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 2px;
         }
 
         .first-to-target {
@@ -195,12 +215,12 @@
         }
 
         .action-btn {
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 10px;
+            border-radius: 6px;
             background: #334155;
             color: rgba(255,255,255,0.8);
             border: none;
-            font-size: 12px;
+            font-size: 14px;
             cursor: pointer;
         }
 
@@ -735,21 +755,20 @@
     <!-- GAME SCREEN -->
     <div id="game-screen">
         <div class="top-bar">
-            <div class="set-selector">
+            <div class="top-bar-left">
                 <button class="set-btn" id="prev-set-btn" onclick="changeSet(-1)">−</button>
+                <button class="set-btn" id="next-set-btn" onclick="changeSet(1)">+</button>
+            </div>
+
+            <div class="top-bar-center">
                 <div class="set-display">
                     <span class="set-number" id="current-set-num">1</span>
-                    <span class="set-label">Set <span id="tiebreak-label" style="color:#facc15; display:none;">TB</span></span>
+                    <span class="set-label">SET <span id="tiebreak-label" style="color:#facc15; display:none;">TIE-BREAK</span></span>
+                    <span class="sets-score-bar" id="sets-score">Set: 0 - 0</span>
                 </div>
-                <button class="set-btn" id="next-set-btn" onclick="changeSet(1)">+</button>
-                <span style="color:rgba(255,255,255,0.5); font-size:14px; margin-left:4px;" id="sets-score">0-0</span>
             </div>
 
-            <div class="first-to-target" id="first-to-badge" style="display:none;">
-                <span id="first-to-text">⭐ Primo a 25: Squadra 1</span>
-            </div>
-
-            <div class="action-buttons">
+            <div class="top-bar-right">
                 <button class="action-btn" onclick="showHistory()">📋</button>
                 <button class="action-btn" onclick="swapSides()">🔄</button>
                 <button class="action-btn" onclick="undoLastSet()">↩️</button>
@@ -1252,14 +1271,10 @@
             document.getElementById('prev-set-btn').disabled = state.currentSet <= 1;
             document.getElementById('next-set-btn').disabled = state.currentSet >= maxSet;
 
-            document.getElementById('sets-score').textContent = `${state.setsWon[0]}-${state.setsWon[1]}`;
+            document.getElementById('sets-score').textContent = `Set: ${state.setsWon[0]} - ${state.setsWon[1]}`;
 
             const target = getTargetPoints();
             if (state.firstToTarget) {
-                document.getElementById('first-to-badge').style.display = 'block';
-                const teamName = state.firstToTarget === 1 ? state.config.team1Name : state.config.team2Name;
-                document.getElementById('first-to-text').textContent = `⭐ Primo a ${target}: ${teamName}`;
-
                 const zone1 = document.getElementById('first-to-1');
                 const zone2 = document.getElementById('first-to-2');
                 zone1.style.display = state.firstToTarget === 1 ? 'block' : 'none';
@@ -1267,7 +1282,6 @@
                 zone1.querySelector('span').textContent = `⭐ Primo a ${target}!`;
                 zone2.querySelector('span').textContent = `⭐ Primo a ${target}!`;
             } else {
-                document.getElementById('first-to-badge').style.display = 'none';
                 document.getElementById('first-to-1').style.display = 'none';
                 document.getElementById('first-to-2').style.display = 'none';
             }
