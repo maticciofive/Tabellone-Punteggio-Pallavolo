@@ -233,6 +233,7 @@
             flex: 1;
             display: flex;
             overflow: hidden;
+            position: relative;
         }
 
         @media (orientation: portrait) {
@@ -697,10 +698,11 @@
             align-items: center;
             height: 100%;
             padding: 0 120px;
+            white-space: nowrap;
         }
 
         .sponsor-ticker-track.scrolling {
-            animation: ticker-scroll 30s linear infinite;
+            animation: ticker-scroll var(--ticker-speed, 30s) linear infinite;
         }
 
         .sponsor-ticker-track.scrolling:hover {
@@ -710,8 +712,8 @@
         .sponsor-item {
             flex-shrink: 0;
             height: 60px;
-            margin: 0 30px;
-            display: flex;
+            margin: 0;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             background: rgba(255,255,255,0.05);
@@ -740,6 +742,93 @@
             }
         }
 
+        /* MAIN SPONSOR OVERLAY */
+        .main-sponsor-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 400px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .main-sponsor-overlay.visible {
+            opacity: 1;
+        }
+
+        .main-sponsor-overlay img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        }
+
+        /* EDIT PANEL */
+        .edit-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100dvh;
+            background: #1e293b;
+            border-left: 2px solid #475569;
+            z-index: 200;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .edit-panel.open {
+            right: 0;
+        }
+
+        .edit-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #475569;
+        }
+
+        .edit-panel-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .edit-panel-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #334155;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .edit-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #334155;
+            border-radius: 8px;
+        }
+
+        .edit-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #94a3b8;
+        }
+
         @media (max-width: 768px) {
             .sponsor-ticker {
                 height: 60px;
@@ -756,12 +845,21 @@
 
             .sponsor-item {
                 height: 45px;
-                margin: 0 20px;
                 padding: 6px 12px;
             }
 
             .sponsor-item img {
                 max-width: 100px;
+            }
+
+            .main-sponsor-overlay {
+                width: 90%;
+                height: 150px;
+            }
+
+            .edit-panel {
+                width: 100%;
+                right: -100%;
             }
         }
 
@@ -857,7 +955,7 @@
         </div>
 
         <div class="form-group">
-            <label>📢 Sponsor (opzionale - seleziona più immagini)</label>
+            <label>📢 Sponsor Ticker (opzionale - seleziona più immagini)</label>
             <input type="file" id="sponsor-images" accept="image/*" multiple onchange="previewSponsors()">
             <p style="font-size:12px; color:#64748b; margin-top:4px;">Le immagini appariranno in una striscia in basso</p>
             <div id="sponsor-preview-container" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
@@ -868,6 +966,31 @@
                 <input type="checkbox" id="sponsor-scroll" checked>
                 Ticker scorrevole (se deselezionato, mostra fisso)
             </label>
+        </div>
+
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label>Velocità Ticker (secondi)</label>
+                <input type="number" id="ticker-speed" value="30" min="5" max="120">
+                <p style="font-size:11px; color:#64748b; margin-top:2px;">Più basso = più veloce</p>
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Altezza Ticker (px)</label>
+                <input type="number" id="ticker-height" value="80" min="40" max="200">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>⭐ Main Sponsor (opzionale - appare al centro con dissolvenza)</label>
+            <input type="file" id="main-sponsor-images" accept="image/*" multiple onchange="previewMainSponsors()">
+            <p style="font-size:12px; color:#64748b; margin-top:4px;">Appariranno al centro del punteggio a rotazione</p>
+            <div id="main-sponsor-preview-container" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Intervallo Main Sponsor (secondi)</label>
+            <input type="number" id="main-sponsor-interval" value="10" min="3" max="60">
+            <p style="font-size:11px; color:#64748b; margin-top:2px;">Ogni quanti secondi cambiare sponsor</p>
         </div>
 
         <button class="primary-btn" onclick="startGame()">🏐 Inizia Partita</button>
@@ -893,6 +1016,7 @@
                 <button class="action-btn" onclick="showHistory()">📋</button>
                 <button class="action-btn" onclick="swapSides()">🔄</button>
                 <button class="action-btn" onclick="undoLastSet()">↩️</button>
+                <button class="action-btn" onclick="openEditPanel()">⚙️</button>
                 <button class="action-btn danger" onclick="backToSetup()">✕</button>
             </div>
         </div>
@@ -933,12 +1057,91 @@
                 </div>
                 <div class="hint">Tap = +1 | Pressione lunga = -1</div>
             </div>
+
+            <!-- MAIN SPONSOR OVERLAY -->
+            <div class="main-sponsor-overlay" id="main-sponsor-overlay">
+                <img id="main-sponsor-img" src="" alt="Main Sponsor">
+            </div>
         </div>
 
         <!-- SPONSOR TICKER -->
         <div class="sponsor-ticker" id="sponsor-ticker">
             <div class="sponsor-ticker-label">SPONSOR</div>
             <div class="sponsor-ticker-track" id="sponsor-ticker-track"></div>
+        </div>
+
+        <!-- EDIT PANEL -->
+        <div class="edit-panel" id="edit-panel">
+            <div class="edit-panel-header">
+                <div class="edit-panel-title">⚙️ Modifica Dati</div>
+                <button class="edit-panel-close" onclick="closeEditPanel()">✕</button>
+            </div>
+
+            <div class="edit-section">
+                <div class="edit-section-title">🏐 Squadre</div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Nome Squadra 1</label>
+                    <input type="text" id="edit-team1-name">
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Colore Squadra 1</label>
+                    <input type="color" id="edit-team1-color">
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Logo Squadra 1</label>
+                    <input type="file" id="edit-team1-logo" accept="image/*" onchange="updateTeamLogo(1)">
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Nome Squadra 2</label>
+                    <input type="text" id="edit-team2-name">
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Colore Squadra 2</label>
+                    <input type="color" id="edit-team2-color">
+                </div>
+                <div class="form-group">
+                    <label>Logo Squadra 2</label>
+                    <input type="file" id="edit-team2-logo" accept="image/*" onchange="updateTeamLogo(2)">
+                </div>
+                <button class="action-btn" style="width:100%; margin-top:12px; padding:10px;" onclick="applyTeamChanges()">Applica Modifiche Squadre</button>
+            </div>
+
+            <div class="edit-section">
+                <div class="edit-section-title">📢 Sponsor Ticker</div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Nuove immagini sponsor</label>
+                    <input type="file" id="edit-sponsor-images" accept="image/*" multiple onchange="updateSponsors()">
+                    <p style="font-size:11px; color:#94a3b8; margin-top:4px;">Sostituiranno gli sponsor attuali</p>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Velocità (secondi)</label>
+                    <input type="number" id="edit-ticker-speed" min="5" max="120">
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Altezza (px)</label>
+                    <input type="number" id="edit-ticker-height" min="40" max="200">
+                </div>
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="edit-sponsor-scroll">
+                        Ticker scorrevole
+                    </label>
+                </div>
+                <button class="action-btn" style="width:100%; margin-top:12px; padding:10px;" onclick="applyTickerChanges()">Applica Modifiche Ticker</button>
+            </div>
+
+            <div class="edit-section">
+                <div class="edit-section-title">⭐ Main Sponsor</div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Nuove immagini main sponsor</label>
+                    <input type="file" id="edit-main-sponsor-images" accept="image/*" multiple onchange="updateMainSponsors()">
+                </div>
+                <div class="form-group">
+                    <label>Intervallo (secondi)</label>
+                    <input type="number" id="edit-main-sponsor-interval" min="3" max="60">
+                </div>
+                <button class="action-btn" style="width:100%; margin-top:12px; padding:10px;" onclick="applyMainSponsorChanges()">Applica Modifiche Main Sponsor</button>
+            </div>
         </div>
     </div>
 
@@ -1000,7 +1203,13 @@
             team1Logo: null,
             team2Logo: null,
             sponsorImages: [],
-            sponsorScroll: true
+            sponsorScroll: true,
+            tickerSpeed: 30,
+            tickerHeight: 80,
+            mainSponsorImages: [],
+            mainSponsorInterval: 10,
+            mainSponsorTimer: null,
+            currentMainSponsorIndex: 0
         };
 
         // Setup toggle for cap
@@ -1054,6 +1263,30 @@
             });
         }
 
+        // Main sponsor preview and storage
+        function previewMainSponsors() {
+            const input = document.getElementById('main-sponsor-images');
+            const previewContainer = document.getElementById('main-sponsor-preview-container');
+            previewContainer.innerHTML = '';
+            state.mainSponsorImages = [];
+
+            const files = input.files;
+            if (files.length === 0) return;
+
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.mainSponsorImages.push(e.target.result);
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width:60px; height:60px; object-fit:contain; border-radius:8px; background:rgba(0,0,0,0.2);';
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
         function startGame() {
             state.config = {
                 team1Name: document.getElementById('team1-name').value || 'Squadra 1',
@@ -1079,9 +1312,13 @@
             state.setHistory = [];
             state.firstToTarget = null;
             state.sponsorScroll = document.getElementById('sponsor-scroll').checked;
+            state.tickerSpeed = parseInt(document.getElementById('ticker-speed').value) || 30;
+            state.tickerHeight = parseInt(document.getElementById('ticker-height').value) || 80;
+            state.mainSponsorInterval = parseInt(document.getElementById('main-sponsor-interval').value) || 10;
 
             loadLogos();
             loadSponsors();
+            startMainSponsorRotation();
 
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
@@ -1110,6 +1347,9 @@
             const ticker = document.getElementById('sponsor-ticker');
             const track = document.getElementById('sponsor-ticker-track');
             
+            // Applica altezza ticker
+            ticker.style.height = state.tickerHeight + 'px';
+            
             // Se non ci sono sponsor, nascondi il ticker
             if (!state.sponsorImages || state.sponsorImages.length === 0) {
                 ticker.classList.remove('active');
@@ -1119,6 +1359,7 @@
             // Mostra il ticker
             ticker.classList.add('active');
             track.innerHTML = '';
+            track.style.justifyContent = '';
 
             // Crea gli elementi sponsor (duplicati per effetto loop continuo)
             const createSponsorItems = () => {
@@ -1130,9 +1371,13 @@
                 });
             };
 
-            // Crea due set di sponsor per loop continuo
+            // Crea tre set di sponsor per loop continuo senza spazi
             createSponsorItems();
             createSponsorItems();
+            createSponsorItems();
+
+            // Applica velocità personalizzata
+            track.style.setProperty('--ticker-speed', state.tickerSpeed + 's');
 
             // Applica o rimuovi l'animazione di scorrimento
             if (state.sponsorScroll) {
@@ -1142,6 +1387,46 @@
                 // Se non scorre, centra gli sponsor
                 track.style.justifyContent = 'center';
             }
+        }
+
+        function startMainSponsorRotation() {
+            // Ferma timer precedente se esiste
+            if (state.mainSponsorTimer) {
+                clearInterval(state.mainSponsorTimer);
+            }
+
+            const overlay = document.getElementById('main-sponsor-overlay');
+            const img = document.getElementById('main-sponsor-img');
+
+            // Se non ci sono main sponsor, nascondi l'overlay
+            if (!state.mainSponsorImages || state.mainSponsorImages.length === 0) {
+                overlay.classList.remove('visible');
+                return;
+            }
+
+            state.currentMainSponsorIndex = 0;
+
+            // Funzione per mostrare lo sponsor corrente
+            const showCurrentSponsor = () => {
+                img.src = state.mainSponsorImages[state.currentMainSponsorIndex];
+                overlay.classList.add('visible');
+
+                // Dopo 3 secondi, nascondi con dissolvenza
+                setTimeout(() => {
+                    overlay.classList.remove('visible');
+                }, 3000);
+
+                // Passa al prossimo sponsor
+                state.currentMainSponsorIndex = (state.currentMainSponsorIndex + 1) % state.mainSponsorImages.length;
+            };
+
+            // Mostra il primo sponsor immediatamente
+            showCurrentSponsor();
+
+            // Poi ripeti ogni intervallo configurato
+            state.mainSponsorTimer = setInterval(() => {
+                showCurrentSponsor();
+            }, state.mainSponsorInterval * 1000);
         }
 
         let isProcessing = false;
@@ -1428,12 +1713,19 @@
                 state.team1Logo = null;
                 state.team2Logo = null;
                 state.sponsorImages = [];
+                state.mainSponsorImages = [];
+                if (state.mainSponsorTimer) {
+                    clearInterval(state.mainSponsorTimer);
+                    state.mainSponsorTimer = null;
+                }
                 document.getElementById('team1-logo').value = '';
                 document.getElementById('team2-logo').value = '';
                 document.getElementById('sponsor-images').value = '';
+                document.getElementById('main-sponsor-images').value = '';
                 document.getElementById('logo-preview-1').style.display = 'none';
                 document.getElementById('logo-preview-2').style.display = 'none';
                 document.getElementById('sponsor-preview-container').innerHTML = '';
+                document.getElementById('main-sponsor-preview-container').innerHTML = '';
             }
         }
 
@@ -1444,12 +1736,133 @@
             state.team1Logo = null;
             state.team2Logo = null;
             state.sponsorImages = [];
+            state.mainSponsorImages = [];
+            if (state.mainSponsorTimer) {
+                clearInterval(state.mainSponsorTimer);
+                state.mainSponsorTimer = null;
+            }
             document.getElementById('team1-logo').value = '';
             document.getElementById('team2-logo').value = '';
             document.getElementById('sponsor-images').value = '';
+            document.getElementById('main-sponsor-images').value = '';
             document.getElementById('logo-preview-1').style.display = 'none';
             document.getElementById('logo-preview-2').style.display = 'none';
             document.getElementById('sponsor-preview-container').innerHTML = '';
+            document.getElementById('main-sponsor-preview-container').innerHTML = '';
+        }
+
+        // EDIT PANEL FUNCTIONS
+        function openEditPanel() {
+            const panel = document.getElementById('edit-panel');
+            
+            // Popola i campi con i valori attuali
+            document.getElementById('edit-team1-name').value = state.config.team1Name;
+            document.getElementById('edit-team1-color').value = state.config.team1Color;
+            document.getElementById('edit-team2-name').value = state.config.team2Name;
+            document.getElementById('edit-team2-color').value = state.config.team2Color;
+            document.getElementById('edit-ticker-speed').value = state.tickerSpeed;
+            document.getElementById('edit-ticker-height').value = state.tickerHeight;
+            document.getElementById('edit-sponsor-scroll').checked = state.sponsorScroll;
+            document.getElementById('edit-main-sponsor-interval').value = state.mainSponsorInterval;
+            
+            panel.classList.add('open');
+        }
+
+        function closeEditPanel() {
+            document.getElementById('edit-panel').classList.remove('open');
+        }
+
+        function applyTeamChanges() {
+            // Aggiorna configurazione
+            state.config.team1Name = document.getElementById('edit-team1-name').value || 'Squadra 1';
+            state.config.team1Color = document.getElementById('edit-team1-color').value;
+            state.config.team2Name = document.getElementById('edit-team2-name').value || 'Squadra 2';
+            state.config.team2Color = document.getElementById('edit-team2-color').value;
+
+            // Aggiorna UI
+            document.getElementById('zone-team1').style.backgroundColor = state.config.team1Color;
+            document.getElementById('zone-team2').style.backgroundColor = state.config.team2Color;
+            document.getElementById('display-name-1').textContent = state.config.team1Name;
+            document.getElementById('display-name-2').textContent = state.config.team2Name;
+
+            alert('✅ Modifiche squadre applicate!');
+        }
+
+        function updateTeamLogo(teamNum) {
+            const input = document.getElementById(`edit-team${teamNum}-logo`);
+            const file = input.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (teamNum === 1) {
+                        state.team1Logo = e.target.result;
+                        document.getElementById('logo-container-1').innerHTML = `<img src="${e.target.result}" class="team-logo-large" alt="Logo ${state.config.team1Name}">`;
+                    } else {
+                        state.team2Logo = e.target.result;
+                        document.getElementById('logo-container-2').innerHTML = `<img src="${e.target.result}" class="team-logo-large" alt="Logo ${state.config.team2Name}">`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateSponsors() {
+            const input = document.getElementById('edit-sponsor-images');
+            const files = input.files;
+            
+            if (files.length === 0) return;
+
+            state.sponsorImages = [];
+            Array.from(files).forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.sponsorImages.push(e.target.result);
+                    
+                    // Quando tutti i file sono stati caricati, aggiorna il ticker
+                    if (state.sponsorImages.length === files.length) {
+                        loadSponsors();
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function applyTickerChanges() {
+            state.tickerSpeed = parseInt(document.getElementById('edit-ticker-speed').value) || 30;
+            state.tickerHeight = parseInt(document.getElementById('edit-ticker-height').value) || 80;
+            state.sponsorScroll = document.getElementById('edit-sponsor-scroll').checked;
+
+            loadSponsors();
+            alert('✅ Modifiche ticker applicate!');
+        }
+
+        function updateMainSponsors() {
+            const input = document.getElementById('edit-main-sponsor-images');
+            const files = input.files;
+            
+            if (files.length === 0) return;
+
+            state.mainSponsorImages = [];
+            Array.from(files).forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.mainSponsorImages.push(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function applyMainSponsorChanges() {
+            state.mainSponsorInterval = parseInt(document.getElementById('edit-main-sponsor-interval').value) || 10;
+            
+            // Se sono state caricate nuove immagini, riavvia la rotazione
+            if (state.mainSponsorImages.length > 0) {
+                startMainSponsorRotation();
+                alert('✅ Modifiche main sponsor applicate!');
+            } else {
+                alert('⚠️ Carica almeno un\'immagine main sponsor prima di applicare');
+            }
         }
 
         function updateUI() {
