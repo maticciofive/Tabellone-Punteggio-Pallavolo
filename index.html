@@ -129,6 +129,7 @@
             background: rgba(15, 23, 42, 0.9);
             border-bottom: 1px solid #334155;
             gap: 12px;
+            flex-shrink: 0;
         }
 
         .top-bar-left {
@@ -195,25 +196,6 @@
             margin-top: 2px;
         }
 
-        .first-to-target {
-            padding: 4px 12px;
-            border-radius: 20px;
-            background: rgba(234, 179, 8, 0.2);
-            border: 1px solid rgba(234, 179, 8, 0.5);
-            animation: pulse 2s infinite;
-        }
-
-        .first-to-target span {
-            color: #fde047;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 4px;
-        }
-
         .action-btn {
             padding: 6px 10px;
             border-radius: 6px;
@@ -229,6 +211,7 @@
             color: #fca5a5;
         }
 
+        /* COURT CONTAINER */
         .court-container {
             flex: 1;
             display: flex;
@@ -668,6 +651,7 @@
             overflow: hidden;
             position: relative;
             display: none;
+            flex-shrink: 0;
         }
 
         .sponsor-ticker.active {
@@ -693,26 +677,28 @@
             padding-left: 12px;
         }
 
+        .sponsor-ticker-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+        }
+
         .sponsor-ticker-track {
             display: flex;
             align-items: center;
             height: 100%;
-            padding: 0 120px;
+            position: absolute;
             white-space: nowrap;
-        }
-
-        .sponsor-ticker-track.scrolling {
-            animation: ticker-scroll var(--ticker-speed, 30s) linear infinite;
-        }
-
-        .sponsor-ticker-track.scrolling:hover {
-            animation-play-state: paused;
+            will-change: transform;
         }
 
         .sponsor-item {
             flex-shrink: 0;
             height: 60px;
-            margin: 0;
+            margin: 0 30px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -733,24 +719,16 @@
             filter: brightness(1.1);
         }
 
-        @keyframes ticker-scroll {
-            0% {
-                transform: translateX(0);
-            }
-            100% {
-                transform: translateX(-50%);
-            }
-        }
-
         /* MAIN SPONSOR OVERLAY */
         .main-sponsor-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%;
-            max-width: 400px;
-            height: 200px;
+            width: 60%;
+            max-width: 300px;
+            height: 40%;
+            max-height: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -769,6 +747,25 @@
             max-height: 100%;
             object-fit: contain;
             filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        }
+
+        /* Portrait mode - main sponsor adjustments */
+        @media (orientation: portrait) {
+            .main-sponsor-overlay {
+                width: 80%;
+                max-width: 250px;
+                height: 25%;
+                max-height: 150px;
+            }
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .main-sponsor-overlay {
+                width: 90%;
+                max-width: 200px;
+                height: 20%;
+                max-height: 120px;
+            }
         }
 
         /* EDIT PANEL */
@@ -839,22 +836,14 @@
                 font-size: 10px;
             }
 
-            .sponsor-ticker-track {
-                padding: 0 90px;
-            }
-
             .sponsor-item {
                 height: 45px;
+                margin: 0 20px;
                 padding: 6px 12px;
             }
 
             .sponsor-item img {
                 max-width: 100px;
-            }
-
-            .main-sponsor-overlay {
-                width: 90%;
-                height: 150px;
             }
 
             .edit-panel {
@@ -1067,7 +1056,9 @@
         <!-- SPONSOR TICKER -->
         <div class="sponsor-ticker" id="sponsor-ticker">
             <div class="sponsor-ticker-label">SPONSOR</div>
-            <div class="sponsor-ticker-track" id="sponsor-ticker-track"></div>
+            <div class="sponsor-ticker-wrapper">
+                <div class="sponsor-ticker-track" id="sponsor-ticker-track"></div>
+            </div>
         </div>
 
         <!-- EDIT PANEL -->
@@ -1209,7 +1200,9 @@
             mainSponsorImages: [],
             mainSponsorInterval: 10,
             mainSponsorTimer: null,
-            currentMainSponsorIndex: 0
+            currentMainSponsorIndex: 0,
+            tickerAnimationId: null,
+            tickerPosition: 0
         };
 
         // Setup toggle for cap
@@ -1249,7 +1242,7 @@
             const files = input.files;
             if (files.length === 0) return;
 
-            Array.from(files).forEach((file, index) => {
+            Array.from(files).forEach((file) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     state.sponsorImages.push(e.target.result);
@@ -1273,7 +1266,7 @@
             const files = input.files;
             if (files.length === 0) return;
 
-            Array.from(files).forEach((file, index) => {
+            Array.from(files).forEach((file) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     state.mainSponsorImages.push(e.target.result);
@@ -1347,50 +1340,81 @@
             const ticker = document.getElementById('sponsor-ticker');
             const track = document.getElementById('sponsor-ticker-track');
             
-            // Applica altezza ticker
+            // Stop existing animation
+            if (state.tickerAnimationId) {
+                cancelAnimationFrame(state.tickerAnimationId);
+                state.tickerAnimationId = null;
+            }
+            
+            // Apply height
             ticker.style.height = state.tickerHeight + 'px';
             
-            // Se non ci sono sponsor, nascondi il ticker
+            // If no sponsors, hide ticker
             if (!state.sponsorImages || state.sponsorImages.length === 0) {
                 ticker.classList.remove('active');
                 return;
             }
 
-            // Mostra il ticker
+            // Show ticker
             ticker.classList.add('active');
             track.innerHTML = '';
-            track.style.justifyContent = '';
 
-            // Crea gli elementi sponsor (duplicati per effetto loop continuo)
-            const createSponsorItems = () => {
-                state.sponsorImages.forEach(src => {
-                    const item = document.createElement('div');
-                    item.className = 'sponsor-item';
-                    item.innerHTML = `<img src="${src}" alt="Sponsor">`;
-                    track.appendChild(item);
-                });
-            };
+            // Create sponsor items
+            state.sponsorImages.forEach(src => {
+                const item = document.createElement('div');
+                item.className = 'sponsor-item';
+                item.innerHTML = `<img src="${src}" alt="Sponsor">`;
+                track.appendChild(item);
+            });
 
-            // Crea tre set di sponsor per loop continuo senza spazi
-            createSponsorItems();
-            createSponsorItems();
-            createSponsorItems();
+            // Duplicate for seamless loop
+            const originalWidth = track.scrollWidth;
+            state.sponsorImages.forEach(src => {
+                const item = document.createElement('div');
+                item.className = 'sponsor-item';
+                item.innerHTML = `<img src="${src}" alt="Sponsor">`;
+                track.appendChild(item);
+            });
 
-            // Applica velocità personalizzata
-            track.style.setProperty('--ticker-speed', state.tickerSpeed + 's');
-
-            // Applica o rimuovi l'animazione di scorrimento
+            // Start animation if scrolling is enabled
             if (state.sponsorScroll) {
-                track.classList.add('scrolling');
+                startTickerAnimation(originalWidth);
             } else {
-                track.classList.remove('scrolling');
-                // Se non scorre, centra gli sponsor
-                track.style.justifyContent = 'center';
+                track.style.transform = 'translateX(0)';
             }
         }
 
+        function startTickerAnimation(originalWidth) {
+            const track = document.getElementById('sponsor-ticker-track');
+            const wrapper = track.parentElement;
+            const wrapperWidth = wrapper.offsetWidth;
+            
+            // Calculate pixels per second based on configured speed
+            const pixelsPerSecond = (originalWidth + wrapperWidth) / state.tickerSpeed;
+            
+            state.tickerPosition = 0;
+            let lastTimestamp = null;
+
+            function animate(currentTimestamp) {
+                if (!lastTimestamp) lastTimestamp = currentTimestamp;
+                const deltaTime = (currentTimestamp - lastTimestamp) / 1000;
+                lastTimestamp = currentTimestamp;
+
+                state.tickerPosition -= pixelsPerSecond * deltaTime;
+
+                if (Math.abs(state.tickerPosition) >= originalWidth) {
+                    state.tickerPosition = 0;
+                }
+
+                track.style.transform = `translateX(${state.tickerPosition}px)`;
+
+                state.tickerAnimationId = requestAnimationFrame(animate);
+            }
+
+            state.tickerAnimationId = requestAnimationFrame(animate);
+        }
+
         function startMainSponsorRotation() {
-            // Ferma timer precedente se esiste
             if (state.mainSponsorTimer) {
                 clearInterval(state.mainSponsorTimer);
             }
@@ -1398,7 +1422,6 @@
             const overlay = document.getElementById('main-sponsor-overlay');
             const img = document.getElementById('main-sponsor-img');
 
-            // Se non ci sono main sponsor, nascondi l'overlay
             if (!state.mainSponsorImages || state.mainSponsorImages.length === 0) {
                 overlay.classList.remove('visible');
                 return;
@@ -1406,24 +1429,19 @@
 
             state.currentMainSponsorIndex = 0;
 
-            // Funzione per mostrare lo sponsor corrente
             const showCurrentSponsor = () => {
                 img.src = state.mainSponsorImages[state.currentMainSponsorIndex];
                 overlay.classList.add('visible');
 
-                // Dopo 3 secondi, nascondi con dissolvenza
                 setTimeout(() => {
                     overlay.classList.remove('visible');
                 }, 3000);
 
-                // Passa al prossimo sponsor
                 state.currentMainSponsorIndex = (state.currentMainSponsorIndex + 1) % state.mainSponsorImages.length;
             };
 
-            // Mostra il primo sponsor immediatamente
             showCurrentSponsor();
 
-            // Poi ripeti ogni intervallo configurato
             state.mainSponsorTimer = setInterval(() => {
                 showCurrentSponsor();
             }, state.mainSponsorInterval * 1000);
@@ -1718,6 +1736,10 @@
                     clearInterval(state.mainSponsorTimer);
                     state.mainSponsorTimer = null;
                 }
+                if (state.tickerAnimationId) {
+                    cancelAnimationFrame(state.tickerAnimationId);
+                    state.tickerAnimationId = null;
+                }
                 document.getElementById('team1-logo').value = '';
                 document.getElementById('team2-logo').value = '';
                 document.getElementById('sponsor-images').value = '';
@@ -1741,6 +1763,10 @@
                 clearInterval(state.mainSponsorTimer);
                 state.mainSponsorTimer = null;
             }
+            if (state.tickerAnimationId) {
+                cancelAnimationFrame(state.tickerAnimationId);
+                state.tickerAnimationId = null;
+            }
             document.getElementById('team1-logo').value = '';
             document.getElementById('team2-logo').value = '';
             document.getElementById('sponsor-images').value = '';
@@ -1755,7 +1781,6 @@
         function openEditPanel() {
             const panel = document.getElementById('edit-panel');
             
-            // Popola i campi con i valori attuali
             document.getElementById('edit-team1-name').value = state.config.team1Name;
             document.getElementById('edit-team1-color').value = state.config.team1Color;
             document.getElementById('edit-team2-name').value = state.config.team2Name;
@@ -1773,13 +1798,11 @@
         }
 
         function applyTeamChanges() {
-            // Aggiorna configurazione
             state.config.team1Name = document.getElementById('edit-team1-name').value || 'Squadra 1';
             state.config.team1Color = document.getElementById('edit-team1-color').value;
             state.config.team2Name = document.getElementById('edit-team2-name').value || 'Squadra 2';
             state.config.team2Color = document.getElementById('edit-team2-color').value;
 
-            // Aggiorna UI
             document.getElementById('zone-team1').style.backgroundColor = state.config.team1Color;
             document.getElementById('zone-team2').style.backgroundColor = state.config.team2Color;
             document.getElementById('display-name-1').textContent = state.config.team1Name;
@@ -1819,7 +1842,6 @@
                 reader.onload = function(e) {
                     state.sponsorImages.push(e.target.result);
                     
-                    // Quando tutti i file sono stati caricati, aggiorna il ticker
                     if (state.sponsorImages.length === files.length) {
                         loadSponsors();
                     }
@@ -1856,7 +1878,6 @@
         function applyMainSponsorChanges() {
             state.mainSponsorInterval = parseInt(document.getElementById('edit-main-sponsor-interval').value) || 10;
             
-            // Se sono state caricate nuove immagini, riavvia la rotazione
             if (state.mainSponsorImages.length > 0) {
                 startMainSponsorRotation();
                 alert('✅ Modifiche main sponsor applicate!');
@@ -1918,6 +1939,10 @@
                     court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row-reverse' : 'column-reverse';
                 } else {
                     court.style.flexDirection = window.innerWidth > window.innerHeight ? 'row' : 'column';
+                }
+                
+                if (state.sponsorScroll && state.sponsorImages.length > 0) {
+                    loadSponsors();
                 }
             }
         });
