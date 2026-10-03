@@ -1,6 +1,6 @@
 # 🏐 Tabellone Pallavolo (Volleyball Scoreboard)
 
-Un'applicazione web leggera, responsive e gratuita per tenere il punteggio delle partite di pallavolo. Progettata per essere utilizzata su tablet (iPad), smartphone e desktop, oppure protetta da questi dispositivi su ledwall, maxischermo, tv senza necessità di installazione o connessione internet una volta caricata.
+Un'applicazione web leggera, responsive e gratuita per tenere il punteggio delle partite di pallavolo. Progettata per essere utilizzata su tablet (iPad), smartphone e desktop, oppure proittata da questi dispositivi su ledwall, maxischermo, tv senza necessità di installazione o connessione internet una volta caricata.
 
 🔗 **Prova l'app live qui:** [https://maticciofive.github.io/tabellone/](https://maticciofive.github.io/tabellone/)
 
